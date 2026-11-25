@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Fasilitas')
@@ -264,6 +263,33 @@
             linear-gradient(135deg, #dcefff, #f1f9ff);
     }
 
+    .facility-image img[hidden],
+    .facility-image-placeholder[hidden] { display: none; }
+
+    .facility-image-placeholder {
+        gap: 6px;
+        align-content: center;
+        justify-items: center;
+    }
+
+    .facility-image-placeholder svg {
+        width: 34px;
+        height: 34px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: .75;
+    }
+
+    .facility-image-placeholder small {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        color: #6f95b8;
+    }
+
     .facility-code {
         position: absolute;
         left: 13px;
@@ -404,6 +430,9 @@
         font-size: 11px;
         font-weight: 700;
         transition: .2s;
+        font-family: inherit;
+        line-height: 1.2;
+        cursor: pointer;
     }
 
     .facility-edit-btn {
@@ -499,6 +528,21 @@
     }
 
     @media(max-width: 650px) {
+        .facility-page { overflow-x: hidden; }
+
+        .facility-hero h2 { word-break: break-word; }
+
+        .facility-hero-tag {
+            font-size: 9px;
+            letter-spacing: 1px;
+            max-width: 100%;
+        }
+
+        .facility-card-actions { flex-direction: column; }
+
+        .facility-edit-btn,
+        .facility-delete-btn { padding: 11px 10px; }
+
         .facility-hero {
             min-height: 230px;
             padding: 25px 22px;
@@ -580,12 +624,13 @@
             <input
                 type="text"
                 id="facilitySearch"
+                aria-label="Cari fasilitas"
                 placeholder="Cari nama, kode, atau lokasi fasilitas..."
                 autocomplete="off"
             >
         </div>
 
-        <select id="facilityStatusFilter" class="facility-filter">
+        <select id="facilityStatusFilter" class="facility-filter" aria-label="Filter status fasilitas">
             <option value="">Semua Status</option>
             <option value="tersedia">Tersedia</option>
             <option value="dipinjam">Dipinjam</option>
@@ -606,8 +651,9 @@
                 if ($f->image_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($f->image_path)) {
                     $imageUrl = asset('storage/' . $f->image_path);
                 } else {
-                    // Gunakan foto bawaan jika belum ada foto upload.
-                    $imagePath = 'images/facilities/peralatan.jpg';
+                    // Foto bawaan hanya dipakai bila nama fasilitas cocok dengan salah satu kata kunci.
+                    // Bila tidak cocok, kartu menampilkan placeholder (bukan foto yang salah).
+                    $imagePath = null;
 
                     if (
                         str_contains($facilityName, 'kelas') ||
@@ -630,13 +676,21 @@
                         $imagePath = 'images/facilities/sound-system.jpg';
                     }
 
-                    $imageUrl = file_exists(public_path($imagePath))
+                    $imageUrl = ($imagePath && file_exists(public_path($imagePath)))
                         ? asset($imagePath)
                         : null;
                 }
 
                 $status = strtolower($f->status ?? '');
                 $statusLabel = ucfirst(str_replace('_', ' ', $status));
+
+                $conditionLabels = [
+                    'baik'         => 'Baik',
+                    'rusak_ringan' => 'Rusak ringan',
+                    'rusak_sedang' => 'Rusak sedang',
+                    'rusak_berat'  => 'Rusak berat',
+                ];
+                $conditionLabel = $conditionLabels[$f->condition] ?? ($f->condition ? ucfirst(str_replace('_', ' ', $f->condition)) : '-');
 
                 $statusClass = match($status) {
                     'tersedia' => 'status-tersedia',
@@ -656,16 +710,23 @@
                 <div class="facility-image">
 
                     @if($imageUrl)
+                        {{-- Bila file gambar gagal dimuat, otomatis ganti ke placeholder --}}
                         <img
                             src="{{ $imageUrl }}"
                             alt="{{ $f->name }}"
                             loading="lazy"
+                            onerror="this.hidden=true;this.nextElementSibling.hidden=false;"
                         >
-                    @else
-                        <div class="facility-image-placeholder">
-                            {{ strtoupper(substr($f->name ?? 'F', 0, 1)) }}
-                        </div>
                     @endif
+
+                    <div class="facility-image-placeholder" @if($imageUrl) hidden @endif>
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="3" y="3" width="18" height="18" rx="3"/>
+                            <circle cx="9" cy="9" r="1.6"/>
+                            <path d="m21 15-5-5L5 21"/>
+                        </svg>
+                        <small>Belum ada foto</small>
+                    </div>
 
                     <span class="facility-code">
                         {{ $f->code }}
@@ -700,7 +761,7 @@
 
                     <div class="facility-condition">
                         <span>Kondisi fasilitas</span>
-                        <strong>{{ $f->condition ?: '-' }}</strong>
+                        <strong>{{ $conditionLabel }}</strong>
                     </div>
 
                     @if(auth()->user()->isAdmin())
@@ -717,7 +778,7 @@
                                 method="POST"
                                 action="/facilities/{{ $f->id }}"
                                 style="flex:1; margin:0;"
-                                onsubmit="return confirm('Yakin ingin menghapus fasilitas ini?')"
+                                data-confirm="Yakin ingin menghapus fasilitas &quot;{{ $f->name }}&quot;? Tindakan ini tidak dapat dibatalkan."
                             >
                                 @csrf
                                 @method('DELETE')
@@ -725,7 +786,7 @@
                                 <button
                                     type="submit"
                                     class="facility-delete-btn"
-                                    style="width:100%; cursor:pointer;"
+                                    style="width:100%;"
                                 >
                                     × Hapus
                                 </button>
@@ -765,6 +826,14 @@
 </div>
 
 <script>
+// Konfirmasi sebelum menghapus fasilitas
+document.addEventListener('submit', function (event) {
+    const message = event.target.dataset ? event.target.dataset.confirm : null;
+    if (message && !window.confirm(message)) {
+        event.preventDefault();
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('facilitySearch');
     const statusFilter = document.getElementById('facilityStatusFilter');
