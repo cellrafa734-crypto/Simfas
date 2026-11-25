@@ -12,24 +12,43 @@
     $hasBorrowingData = collect($monthlyBorrowings)->sum() > 0;
     $hasFacilityData = collect($facilityStatusValues)->sum() > 0;
 
+    /* Ikon SVG (garis) - menggantikan simbol teks agar tampil rapi di semua perangkat */
+    $icons = [
+        'grid'     => '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+        'check'    => '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+        'tool'     => '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z"/>',
+        'clock'    => '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+        'file'     => '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+        'user'     => '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+        'trend'    => '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+        'calendar' => '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+        'bars'     => '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
+        'pie'      => '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+        'activity' => '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+        'info'     => '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+        'chevron'  => '<polyline points="9 18 15 12 9 6"/>',
+        'building' => '<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4"/>',
+    ];
+    $svg = fn ($key, $class = '') => '<svg class="dash-svg ' . $class . '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . ($icons[$key] ?? $icons['file']) . '</svg>';
+
     $statConfig = [
-        'Total fasilitas' => ['icon' => '▦', 'color' => 'blue'],
-        'Tersedia' => ['icon' => '✓', 'color' => 'green'],
-        'Dalam pemeliharaan' => ['icon' => '⚙', 'color' => 'orange'],
-        'Menunggu persetujuan' => ['icon' => '◷', 'color' => 'purple'],
-        'Total pengajuan' => ['icon' => '▤', 'color' => 'navy'],
-        'Pengajuan saya' => ['icon' => '▣', 'color' => 'blue'],
+        'Total fasilitas'      => ['icon' => 'building', 'color' => 'blue'],
+        'Tersedia'             => ['icon' => 'check',    'color' => 'green'],
+        'Dalam pemeliharaan'   => ['icon' => 'tool',     'color' => 'orange'],
+        'Menunggu persetujuan' => ['icon' => 'clock',    'color' => 'purple'],
+        'Total pengajuan'      => ['icon' => 'file',     'color' => 'navy'],
+        'Pengajuan saya'       => ['icon' => 'user',     'color' => 'blue'],
     ];
 
-    /* ---- Insight turunan (dihitung dari data yang sudah ada, tanpa query baru) ---- */
-    $monthlyArr = collect($monthlyBorrowings)->values();
-    $labelsArr  = collect($monthlyLabels)->values();
-    $totalYear  = (int) $monthlyArr->sum();
+    /* Sorotan tahun ini: dihitung dari data yang sudah ada (tanpa query baru) */
+    $monthlyArr   = collect($monthlyBorrowings)->values();
+    $labelsArr    = collect($monthlyLabels)->values();
+    $totalYear    = (int) $monthlyArr->sum();
     $activeMonths = $monthlyArr->filter(fn ($v) => $v > 0)->count();
-    $peakIndex  = $totalYear > 0 ? $monthlyArr->search($monthlyArr->max()) : null;
-    $peakLabel  = $peakIndex !== null ? ($labelsArr[$peakIndex] ?? '-') : '-';
-    $peakValue  = $peakIndex !== null ? (int) $monthlyArr->max() : 0;
-    $avgMonthly = $activeMonths > 0 ? round($totalYear / $activeMonths, 1) : 0;
+    $peakIndex    = $totalYear > 0 ? $monthlyArr->search($monthlyArr->max()) : null;
+    $peakLabel    = $peakIndex !== null ? ($labelsArr[$peakIndex] ?? '-') : '-';
+    $peakValue    = $peakIndex !== null ? (int) $monthlyArr->max() : 0;
+    $avgMonthly   = $activeMonths > 0 ? round($totalYear / $activeMonths, 1) : 0;
 
     $totalFac  = $stats['Total fasilitas'] ?? collect($facilityStatusValues)->sum();
     $available = $stats['Tersedia'] ?? null;
@@ -44,131 +63,34 @@
         --sky: #eaf5ff;
         --pale: #f4f9fd;
         --text: #435b70;
-        --muted: #8ba0b3;
+        --muted: #7e94a7;
         --line: #e4edf5;
+        --gap: 20px;
         color: var(--navy);
-        padding-bottom: 35px;
+        padding-bottom: 30px;
     }
 
-    .sim-dashboard * { box-sizing: border-box; }
+    .sim-dashboard *, .sim-dashboard *::before, .sim-dashboard *::after { box-sizing: border-box; }
 
-    /* ===== Panggung (latar gradasi biru muda seperti referensi) ===== */
+    .sim-dashboard .dash-svg { width: 1em; height: 1em; flex: none; display: block; }
+
+    /* ===== Latar gradasi biru muda ===== */
     .dash-stage {
-        position: relative;
-        overflow: hidden;
-        padding: 26px;
-        border-radius: 28px;
-        background:
-            radial-gradient(circle at 12% 8%, rgba(255,255,255,.9) 0, rgba(255,255,255,0) 38%),
-            linear-gradient(135deg, #d9ecfb 0%, #bcdcf5 48%, #9fcdf0 100%);
-    }
-
-    .dash-stage::before,
-    .dash-stage::after {
-        content: "";
-        position: absolute;
-        border: 1px solid rgba(255,255,255,.55);
-        border-radius: 50%;
-        pointer-events: none;
-    }
-    .dash-stage::before { width: 520px; height: 520px; left: -190px; bottom: -330px; }
-    .dash-stage::after  { width: 380px; height: 380px; right: -120px; top: -230px; }
-
-    /* ===== Cangkang putih besar ===== */
-    .dash-shell {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        gap: 22px;
-        padding: 22px;
+        width: 100%;
+        max-width: 100%;
+        padding: 24px;
         border-radius: 24px;
-        background: rgba(255,255,255,.94);
-        box-shadow: 0 25px 60px rgba(24,62,96,.16);
+        background: linear-gradient(135deg, #e6f3fd 0%, #cfe6f8 55%, #b9dbf4 100%);
     }
 
-    /* ===== Rel ikon mini (navigasi cepat di dalam dashboard) ===== */
-    .dash-rail {
-        position: sticky;
-        top: 20px;
-        align-self: flex-start;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding: 12px 9px;
-        border-radius: 18px;
-        background: linear-gradient(180deg, #368bd0, #236da9);
-        box-shadow: 0 10px 22px rgba(35,109,169,.28);
-    }
+    .dash-content { display: grid; gap: var(--gap); }
 
-    .dash-rail a {
-        position: relative;
-        display: grid;
-        place-items: center;
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        color: rgba(255,255,255,.75);
-        font-size: 1.1rem;
-        text-decoration: none;
-        transition: background .2s ease, color .2s ease, transform .2s ease;
-    }
-
-    .dash-rail a:hover { background: rgba(255,255,255,.16); color: #fff; }
-    .dash-rail a.active { background: #fff; color: var(--primary-dark); transform: scale(1.06); }
-
-    .dash-rail a::after {
-        content: attr(data-tip);
-        position: absolute;
-        left: calc(100% + 12px);
-        top: 50%;
-        transform: translateY(-50%) translateX(-4px);
-        padding: 6px 10px;
-        border-radius: 8px;
-        background: var(--navy);
-        color: #fff;
-        font-size: .7rem;
-        font-weight: 600;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity .18s ease, transform .18s ease;
-        z-index: 5;
-    }
-    .dash-rail a:hover::after { opacity: 1; transform: translateY(-50%) translateX(0); }
-
-    .dash-main { flex: 1; min-width: 0; }
-
-    /* ===== Heading ===== */
-    .dash-heading {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 15px;
-        margin-bottom: 20px;
-    }
-
-    .dash-heading h1 {
-        margin: 0;
-        color: var(--navy);
-        font-size: clamp(1.45rem, 3vw, 2rem);
-        font-weight: 800;
-        letter-spacing: -.7px;
-    }
-
-    .dash-heading p { margin: 7px 0 0; color: var(--muted); font-size: .86rem; }
-
-    .dash-date {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        padding: 11px 15px;
+    /* Kartu dasar */
+    .dash-card {
         border: 1px solid var(--line);
-        border-radius: 14px;
-        background: var(--pale);
-        color: var(--text);
-        font-size: .78rem;
-        font-weight: 700;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgba(24,62,96,.08);
     }
 
     /* ===== Hero ===== */
@@ -178,57 +100,41 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        min-height: 170px;
-        padding: 28px 32px;
-        margin-bottom: 22px;
-        border-radius: 20px;
-        color: white;
-        background: linear-gradient(115deg, #183e60 0%, #236da9 55%, #55a5e2 100%);
-        box-shadow: 0 14px 30px rgba(35,109,169,.2);
+        gap: 24px;
+        padding: 30px 34px;
+        border-radius: 18px;
+        color: #fff;
+        background: linear-gradient(115deg, #183e60 0%, #236da9 58%, #4f9fdc 100%);
+        box-shadow: 0 14px 30px rgba(35,109,169,.22);
     }
 
     .dash-hero::before,
     .dash-hero::after {
         content: "";
         position: absolute;
-        border: 1px solid rgba(255,255,255,.15);
+        border: 1px solid rgba(255,255,255,.14);
         border-radius: 50%;
         pointer-events: none;
     }
-    .dash-hero::before { width: 300px; height: 300px; right: 9%; top: -205px; }
-    .dash-hero::after  { width: 230px; height: 230px; right: -65px; bottom: -165px; }
+    .dash-hero::before { width: 300px; height: 300px; right: 12%; top: -190px; }
+    .dash-hero::after  { width: 240px; height: 240px; right: -70px; bottom: -150px; }
 
-    .dash-hero-content { position: relative; z-index: 2; max-width: 650px; }
-
-    .dash-hero-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 12px;
-        margin-bottom: 14px;
-        border: 1px solid rgba(255,255,255,.22);
-        border-radius: 30px;
-        background: rgba(255,255,255,.12);
-        color: #eaf5ff;
-        font-size: .68rem;
-        font-weight: 800;
-        letter-spacing: 1.2px;
-    }
+    .dash-hero-content { position: relative; z-index: 1; max-width: 620px; }
 
     .dash-hero h2 {
-        margin: 0 0 10px;
-        color: white !important;
-        font-size: clamp(1.4rem, 3vw, 1.9rem);
+        margin: 0 0 8px;
+        color: #fff !important;
+        font-size: clamp(1.35rem, 2.6vw, 1.75rem);
         font-weight: 800;
-        letter-spacing: -.7px;
+        letter-spacing: -.4px;
+        line-height: 1.25;
     }
 
     .dash-hero p {
-        max-width: 520px;
         margin: 0;
-        color: rgba(255,255,255,.82);
-        font-size: .86rem;
-        line-height: 1.8;
+        color: rgba(255,255,255,.85);
+        font-size: .9rem;
+        line-height: 1.7;
     }
 
     .dash-hero-art {
@@ -236,103 +142,81 @@
         z-index: 1;
         display: grid;
         place-items: center;
-        width: 105px;
-        height: 105px;
-        margin-right: 24px;
-        border: 1px solid rgba(255,255,255,.2);
-        border-radius: 28px;
-        background: rgba(255,255,255,.12);
-        color: white;
-        font-size: 3.6rem;
-        transform: rotate(-7deg);
+        flex: none;
+        width: 84px;
+        height: 84px;
+        border: 1px solid rgba(255,255,255,.25);
+        border-radius: 24px;
+        background: rgba(255,255,255,.14);
+        font-size: 2.4rem;
         animation: dashFloat 5s ease-in-out infinite;
     }
 
-    /* ===== Judul seksi ===== */
+    /* ===== Judul bagian ===== */
     .dash-section-title {
         display: flex;
         justify-content: space-between;
         align-items: flex-end;
         gap: 12px;
-        margin: 28px 0 14px;
-        scroll-margin-top: 20px;
+        margin: 6px 2px -4px;
     }
-
-    .dash-section-title h5 { margin: 0; color: var(--navy); font-size: 1.02rem; font-weight: 800; }
-    .dash-section-title p { margin: 5px 0 0; color: var(--muted); font-size: .76rem; }
+    .dash-section-title h5 { margin: 0; color: var(--navy); font-size: 1.05rem; font-weight: 800; }
+    .dash-section-title p  { margin: 4px 0 0; color: #5d7387; font-size: .8rem; }
 
     .dash-label {
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        padding: 7px 12px;
+        padding: 6px 12px;
         border-radius: 30px;
-        background: var(--sky);
+        background: rgba(255,255,255,.75);
         color: var(--primary-dark);
-        font-size: .7rem;
-        font-weight: 800;
+        font-size: .75rem;
+        font-weight: 700;
+        white-space: nowrap;
     }
+    .dash-label i { width: 7px; height: 7px; border-radius: 50%; background: var(--primary); animation: dashPulse 2s ease-in-out infinite; }
 
-    .dash-label::first-letter { animation: dashPulse 2s ease-in-out infinite; }
+    /* ===== Kartu statistik: rata & selalu penuh satu baris ===== */
+    .dash-stats { display: flex; flex-wrap: wrap; gap: 16px; }
 
-    /* ===== Kartu statistik ===== */
     .dash-stat {
         position: relative;
-        height: 100%;
-        min-height: 142px;
+        flex: 1 1 200px;
+        min-width: 0;
         overflow: hidden;
-        padding: 19px 20px;
-        border: 1px solid var(--line);
-        border-radius: 18px;
-        background: linear-gradient(180deg, #ffffff 0%, var(--pale) 100%);
-        box-shadow: 0 6px 20px rgba(24,62,96,.06);
-        transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+        padding: 20px 20px 22px;
+        transition: transform .25s ease, box-shadow .25s ease;
     }
-
-    .dash-stat:hover {
-        transform: translateY(-4px);
-        border-color: #cfe3f4;
-        box-shadow: 0 16px 30px rgba(54,139,208,.15);
-    }
-
-    .dash-stat-top { display: flex; justify-content: space-between; align-items: center; }
+    .dash-stat:hover { transform: translateY(-3px); box-shadow: 0 16px 30px rgba(54,139,208,.16); }
 
     .dash-stat-icon {
         display: grid;
         place-items: center;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        font-size: 1.2rem;
-        font-weight: 800;
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,.7), 0 4px 10px rgba(24,62,96,.08);
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        font-size: 1.3rem;
     }
-
-    .dash-stat-icon.blue   { color: #368bd0; background: #eaf5ff; }
-    .dash-stat-icon.green  { color: #15966a; background: #eaf8f1; }
-    .dash-stat-icon.orange { color: #d58a25; background: #fff5e8; }
-    .dash-stat-icon.purple { color: #8166c5; background: #f3efff; }
-    .dash-stat-icon.navy   { color: #183e60; background: #edf3f8; }
-
-    .dash-stat-mark { color: #c8d9e7; font-size: 1.1rem; transition: transform .25s ease, color .25s ease; }
-    .dash-stat:hover .dash-stat-mark { transform: translate(3px,-3px); color: var(--primary); }
+    .dash-stat-icon.blue   { color: #2f84cb; background: #eaf5ff; }
+    .dash-stat-icon.green  { color: #15966a; background: #e7f7ef; }
+    .dash-stat-icon.orange { color: #d1851f; background: #fff3e2; }
+    .dash-stat-icon.purple { color: #7a5fc0; background: #f1ecff; }
+    .dash-stat-icon.navy   { color: #183e60; background: #e9f0f6; }
 
     .dash-stat-number {
-        margin-top: 16px;
+        margin-top: 18px;
         color: var(--navy);
-        font-size: 2rem;
+        font-size: 2.1rem;
         font-weight: 800;
         line-height: 1;
         letter-spacing: -1px;
     }
-
-    .dash-stat-name { margin-top: 9px; color: #8095a8; font-size: .77rem; font-weight: 600; }
+    .dash-stat-name { margin-top: 8px; color: #637b8f; font-size: .85rem; font-weight: 600; }
 
     .dash-stat-bar {
         position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
+        left: 0; right: 0; bottom: 0;
         height: 4px;
         background: var(--primary);
         transform-origin: left;
@@ -343,40 +227,36 @@
     .dash-stat-bar.purple { background: #8166c5; }
     .dash-stat-bar.navy   { background: #183e60; }
 
-    /* ===== Kartu insight (tambahan) ===== */
-    .dash-insight {
+    /* ===== Sorotan tahun ini: satu kartu, empat bagian ===== */
+    .dash-strip { display: grid; grid-template-columns: repeat(4, 1fr); }
+
+    .dash-strip-item {
         display: flex;
         align-items: center;
         gap: 14px;
-        height: 100%;
-        padding: 16px 18px;
-        border: 1px solid #d6e8f6;
-        border-radius: 18px;
-        background: linear-gradient(135deg, #f0f8fe 0%, #e3f1fc 100%);
-        transition: transform .25s ease, box-shadow .25s ease;
+        padding: 20px 22px;
+        min-width: 0;
     }
-    .dash-insight:hover { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(54,139,208,.14); }
+    .dash-strip-item + .dash-strip-item { border-left: 1px solid var(--line); }
 
-    .dash-insight-icon {
+    .dash-strip-icon {
         display: grid;
         place-items: center;
         flex: none;
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        background: #fff;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--sky);
         color: var(--primary);
-        font-size: 1.1rem;
-        box-shadow: 0 4px 10px rgba(54,139,208,.14);
+        font-size: 1.2rem;
     }
+    .dash-strip-item strong { display: block; color: var(--navy); font-size: 1.2rem; font-weight: 800; line-height: 1.2; }
+    .dash-strip-item span.cap { display: block; margin-top: 2px; color: var(--muted); font-size: .78rem; font-weight: 600; }
 
-    .dash-insight strong { display: block; color: var(--navy); font-size: 1.15rem; font-weight: 800; line-height: 1.15; }
-    .dash-insight span { color: var(--muted); font-size: .72rem; font-weight: 600; }
-
-    .dash-ring { position: relative; flex: none; width: 56px; height: 56px; }
+    .dash-ring { position: relative; flex: none; width: 48px; height: 48px; }
     .dash-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-    .dash-ring circle { fill: none; stroke-width: 6; }
-    .dash-ring .track { stroke: #fff; }
+    .dash-ring circle { fill: none; stroke-width: 3.6; }
+    .dash-ring .track { stroke: var(--sky); }
     .dash-ring .value {
         stroke: var(--primary);
         stroke-linecap: round;
@@ -384,101 +264,89 @@
         stroke-dashoffset: var(--offset);
         animation: dashRing 1.3s .35s cubic-bezier(.2,.8,.2,1) both;
     }
-    .dash-ring b {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        place-items: center;
-        color: var(--primary-dark);
-        font-size: .68rem;
-        font-weight: 800;
-    }
+    .dash-ring b { position: absolute; inset: 0; display: grid; place-items: center; color: var(--primary-dark); font-size: .72rem; font-weight: 800; }
 
-    /* ===== Panel grafik ===== */
-    .dash-panel {
-        height: 100%;
-        padding: 22px;
-        border: 1px solid var(--line);
-        border-radius: 20px;
-        background: #fff;
-        box-shadow: 0 6px 22px rgba(24,62,96,.06);
-    }
+    /* ===== Grafik: dua kolom sejajar ===== */
+    .dash-charts { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: var(--gap); }
+
+    .dash-panel { padding: 22px 24px; }
 
     .dash-panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-    .dash-panel-head h6 { margin: 0; color: var(--navy); font-size: .92rem; font-weight: 800; }
-    .dash-panel-head p { margin: 6px 0 0; color: var(--muted); font-size: .73rem; }
+    .dash-panel-head h6 { margin: 0; color: var(--navy); font-size: .98rem; font-weight: 800; }
+    .dash-panel-head p  { margin: 5px 0 0; color: var(--muted); font-size: .8rem; }
 
     .dash-panel-icon {
         display: grid;
         place-items: center;
-        width: 37px;
-        height: 37px;
-        border-radius: 12px;
+        flex: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
         background: var(--sky);
         color: var(--primary);
         font-size: 1.1rem;
     }
 
-    .dash-chart { position: relative; width: 100%; height: 265px; margin-top: 20px; }
+    .dash-chart { position: relative; width: 100%; height: 270px; margin-top: 18px; }
 
-    .dash-empty-chart {
+    .dash-empty-chart,
+    .dash-empty {
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        height: 265px;
-        margin-top: 20px;
-        padding: 20px;
-        border: 1px dashed #cfe0ee;
-        border-radius: 16px;
-        background: #f8fbfe;
         text-align: center;
         color: var(--muted);
     }
-    .dash-empty-chart strong { margin: 10px 0 5px; color: var(--text); font-size: .85rem; }
+    .dash-empty-chart {
+        height: 270px;
+        margin-top: 18px;
+        padding: 20px;
+        border: 1px dashed #cfe0ee;
+        border-radius: 14px;
+        background: #f8fbfe;
+    }
+    .dash-empty-chart .dash-svg, .dash-empty .dash-svg { font-size: 2rem; color: #a9c2d6; margin-bottom: 10px; }
+    .dash-empty-chart strong, .dash-empty strong { color: var(--text); font-size: .9rem; margin-bottom: 4px; }
+    .dash-empty-chart small, .dash-empty small { font-size: .8rem; }
+    .dash-empty { padding: 44px 15px; }
 
-    /* ===== Tabel aktivitas ===== */
-    .dash-activity { margin-top: 22px; scroll-margin-top: 20px; }
-
+    /* ===== Tabel ===== */
     .dash-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
-
     .dash-table { width: 100%; min-width: 560px; margin: 0; border-collapse: separate; border-spacing: 0; }
 
     .dash-table th {
-        padding: 14px 15px;
+        padding: 13px 16px;
         background: #f3f8fc;
-        color: #7b91a4;
-        font-size: .72rem;
-        font-weight: 800;
-        letter-spacing: .3px;
+        color: #62798c;
+        font-size: .78rem;
+        font-weight: 700;
+        text-align: left;
         white-space: nowrap;
         border-bottom: 1px solid var(--line);
     }
-
     .dash-table td {
-        padding: 15px;
-        color: #637c90;
-        font-size: .77rem;
+        padding: 14px 16px;
+        color: #556e82;
+        font-size: .85rem;
         border-bottom: 1px solid #edf1f5;
         vertical-align: middle;
     }
-
     .dash-table tbody tr { transition: background .2s ease; }
     .dash-table tbody tr:last-child td { border-bottom: 0; }
     .dash-table tbody tr:hover { background: #eef7fe; }
 
     .dash-person { display: flex; align-items: center; gap: 10px; color: var(--navy); font-weight: 700; }
-
     .dash-avatar {
         display: grid;
         place-items: center;
-        width: 33px;
-        height: 33px;
         flex: none;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         background: linear-gradient(135deg, #d9ecfb, #b7d9f3);
         color: var(--primary-dark);
-        font-size: .73rem;
+        font-size: .75rem;
         font-weight: 800;
     }
 
@@ -486,39 +354,34 @@
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        padding: 6px 10px;
+        padding: 5px 11px;
         border-radius: 30px;
-        font-size: .67rem;
-        font-weight: 800;
+        font-size: .75rem;
+        font-weight: 700;
         white-space: nowrap;
     }
-
     .dash-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-
     .dash-status.menunggu  { color: #a16a13; background: #fff5df; }
     .dash-status.disetujui { color: #19815a; background: #eaf8f1; }
     .dash-status.ditolak   { color: #c34c4c; background: #fff0ef; }
     .dash-status.dipinjam  { color: #2679b5; background: #eaf5ff; }
     .dash-status.selesai   { color: #65788a; background: #eff3f6; }
     .dash-status.default   { color: #65788a; background: #eff3f6; }
-
-    .dash-status.menunggu::before,
-    .dash-status.dipinjam::before { animation: dashPulse 1.8s ease-in-out infinite; }
+    .dash-status.menunggu::before, .dash-status.dipinjam::before { animation: dashPulse 1.8s ease-in-out infinite; }
 
     .dash-view-all {
         display: inline-flex;
         align-items: center;
-        gap: 7px;
+        gap: 4px;
         color: var(--primary-dark);
-        font-size: .76rem;
-        font-weight: 800;
+        font-size: .82rem;
+        font-weight: 700;
         text-decoration: none;
+        white-space: nowrap;
     }
     .dash-view-all:hover { color: var(--navy); }
-
-    .dash-empty { padding: 45px 15px; text-align: center; color: var(--muted); }
-    .dash-empty .empty-icon { display: block; margin-bottom: 10px; color: #b5c9d9; font-size: 2rem; }
-    .dash-empty strong { display: block; color: var(--text); font-size: .85rem; }
+    .dash-view-all .dash-svg { font-size: 1rem; transition: transform .2s ease; }
+    .dash-view-all:hover .dash-svg { transform: translateX(3px); }
 
     .dash-petugas-note {
         display: flex;
@@ -526,375 +389,323 @@
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 14px;
-        margin-top: 22px;
-        padding: 17px 20px;
-        border: 1px solid #d9eaf7;
-        border-radius: 16px;
-        background: #f0f8fe;
+        padding: 16px 20px;
+        font-size: .85rem;
         color: #426b89;
-        font-size: .8rem;
     }
-
+    .dash-petugas-note > span { display: inline-flex; align-items: center; gap: 10px; }
+    .dash-petugas-note > span .dash-svg { font-size: 1.2rem; color: var(--primary); }
     .dash-petugas-note a {
-        padding: 8px 14px;
+        padding: 9px 16px;
         border-radius: 10px;
         background: var(--primary);
-        color: white;
-        font-size: .73rem;
+        color: #fff;
+        font-size: .8rem;
         font-weight: 700;
         text-decoration: none;
-        transition: background .2s ease, transform .2s ease;
+        transition: background .2s ease;
     }
-    .dash-petugas-note a:hover { background: var(--primary-dark); color: white; transform: translateY(-1px); }
+    .dash-petugas-note a:hover { background: var(--primary-dark); color: #fff; }
 
-    /* ===== Animasi masuk (satu rangkaian saat halaman dibuka) ===== */
+    /* ===== Animasi masuk ===== */
     .dash-reveal { animation: dashUp .6s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 70ms); }
 
-    @keyframes dashUp    { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+    @keyframes dashUp    { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
     @keyframes dashGrow  { from { transform: scaleX(0); } to { transform: scaleX(1); } }
     @keyframes dashRing  { from { stroke-dashoffset: 100; } }
-    @keyframes dashFloat { 0%,100% { transform: rotate(-7deg) translateY(0); } 50% { transform: rotate(-4deg) translateY(-8px); } }
+    @keyframes dashFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
     @keyframes dashPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
 
     @media (prefers-reduced-motion: reduce) {
-        .sim-dashboard *, .sim-dashboard *::before, .sim-dashboard *::after {
-            animation: none !important;
-            transition: none !important;
-        }
+        .sim-dashboard *, .sim-dashboard *::before, .sim-dashboard *::after { animation: none !important; transition: none !important; }
     }
 
     /* ===== Responsif ===== */
+    @media (max-width: 1199.98px) {
+        .dash-strip { grid-template-columns: repeat(2, 1fr); }
+        .dash-strip-item:nth-child(3) { border-left: 0; }
+        .dash-strip-item:nth-child(n+3) { border-top: 1px solid var(--line); }
+    }
+
     @media (max-width: 991.98px) {
-        .dash-stage { padding: 14px; border-radius: 22px; }
-        .dash-shell { flex-direction: column; padding: 16px; gap: 16px; }
-        .dash-rail {
-            position: static;
-            flex-direction: row;
-            justify-content: center;
-            align-self: stretch;
-            padding: 8px;
-        }
-        .dash-rail a::after { display: none; }
+        .dash-charts { grid-template-columns: minmax(0, 1fr); }
     }
 
     @media (max-width: 767.98px) {
+        .dash-stage { padding: 14px; border-radius: 18px; }
         .dash-hero { padding: 24px 20px; }
-        .dash-hero-art { width: 75px; height: 75px; margin-right: 0; font-size: 2.6rem; }
-        .dash-stat { min-height: 132px; padding: 16px; }
+        .dash-hero-art { width: 64px; height: 64px; font-size: 1.9rem; border-radius: 18px; }
+        .dash-stat { flex-basis: calc(50% - 8px); padding: 16px 16px 20px; }
         .dash-stat-number { font-size: 1.7rem; }
         .dash-panel { padding: 18px; }
         .dash-chart, .dash-empty-chart { height: 235px; }
-        .dash-date { font-size: .7rem; }
     }
 
-    @media (max-width: 480px) {
+    @media (max-width: 575.98px) {
         .dash-hero-art { display: none; }
-        .dash-heading { align-items: flex-start; }
-        .dash-stat-name { font-size: .7rem; }
+        .dash-strip { grid-template-columns: minmax(0, 1fr); }
+        .dash-strip-item + .dash-strip-item { border-left: 0; border-top: 1px solid var(--line); }
         .dash-section-title { align-items: flex-start; }
-        .dash-stage { padding: 10px; }
-        .dash-shell { padding: 12px; }
     }
 </style>
 
 <div class="sim-dashboard">
   <div class="dash-stage">
-    <div class="dash-shell">
+    <div class="dash-content">
 
-        {{-- Rel ikon mini: loncat ke bagian dashboard (sidebar utama tidak diubah) --}}
-        <nav class="dash-rail" aria-label="Navigasi cepat dashboard">
-            <a href="#sec-stat" data-tip="Statistik" class="active">▦</a>
-            <a href="#sec-chart" data-tip="Analisis">⌁</a>
-            <a href="#sec-activity" data-tip="Aktivitas">▤</a>
-        </nav>
+        {{-- Judul halaman & tanggal sudah ada di header layout, jadi tidak diulang di sini --}}
+        <section class="dash-hero dash-reveal" style="--i:0">
+            <div class="dash-hero-content">
+                <h2>Selamat datang, {{ $user->name }}!</h2>
+                <p>
+                    @if($isAdmin)
+                        Pantau dan kelola fasilitas kampus, pengajuan peminjaman,
+                        serta aktivitas sistem melalui satu dashboard.
+                    @elseif($isPetugas)
+                        Pantau informasi fasilitas kampus dan aktivitas peminjaman
+                        melalui dashboard SIMFAS.
+                    @else
+                        Temukan fasilitas kampus dan pantau pengajuan peminjamanmu
+                        dengan lebih mudah melalui SIMFAS.
+                    @endif
+                </p>
+            </div>
+            <div class="dash-hero-art" aria-hidden="true">{!! $svg('building') !!}</div>
+        </section>
 
-        <div class="dash-main">
+        <div class="dash-section-title">
+            <div>
+                <h5>Ringkasan Statistik</h5>
+                <p>Data fasilitas dan peminjaman yang tercatat dalam sistem.</p>
+            </div>
+            <span class="dash-label"><i></i> Data sistem</span>
+        </div>
 
-            <div class="dash-heading dash-reveal" style="--i:0">
+        <div class="dash-stats">
+            @foreach($stats as $label => $value)
+                @php
+                    $config = $statConfig[$label] ?? ['icon' => 'file', 'color' => 'blue'];
+                @endphp
+                <article class="dash-card dash-stat dash-reveal" style="--i:{{ $loop->index + 1 }}">
+                    <div class="dash-stat-icon {{ $config['color'] }}">{!! $svg($config['icon']) !!}</div>
+                    <div class="dash-stat-number" data-count="{{ (int) $value }}">{{ number_format($value) }}</div>
+                    <div class="dash-stat-name">{{ $label }}</div>
+                    <div class="dash-stat-bar {{ $config['color'] }}"></div>
+                </article>
+            @endforeach
+        </div>
+
+        <section class="dash-card dash-strip dash-reveal" style="--i:6">
+            <div class="dash-strip-item">
+                <div class="dash-strip-icon">{!! $svg('trend') !!}</div>
                 <div>
-                    <h1>Dashboard</h1>
-                    <p>Ringkasan informasi dan aktivitas SIMFAS Kampus.</p>
-                </div>
-                <div class="dash-date">
-                    <span>▦</span>
-                    {{ now('Asia/Jakarta')->locale('id')->translatedFormat('l, d F Y') }}
+                    <strong data-count="{{ $totalYear }}">{{ number_format($totalYear) }}</strong>
+                    <span class="cap">Pengajuan tahun {{ now()->year }}</span>
                 </div>
             </div>
-
-            <section class="dash-hero dash-reveal" style="--i:1">
-                <div class="dash-hero-content">
-                    <div class="dash-hero-tag">✦ SIMFAS KAMPUS</div>
-                    <h2>Selamat datang, {{ $user->name }}!</h2>
-                    <p>
-                        @if($isAdmin)
-                            Pantau dan kelola fasilitas kampus, pengajuan peminjaman,
-                            serta aktivitas sistem melalui satu dashboard.
-                        @elseif($isPetugas)
-                            Pantau informasi fasilitas kampus dan aktivitas peminjaman
-                            melalui dashboard SIMFAS.
-                        @else
-                            Temukan fasilitas kampus dan pantau pengajuan peminjamanmu
-                            dengan lebih mudah melalui SIMFAS.
-                        @endif
-                    </p>
-                </div>
-                <div class="dash-hero-art" aria-hidden="true">▦</div>
-            </section>
-
-            <div class="dash-section-title" id="sec-stat">
+            <div class="dash-strip-item">
+                <div class="dash-strip-icon">{!! $svg('calendar') !!}</div>
                 <div>
-                    <h5>Ringkasan Statistik</h5>
-                    <p>Data fasilitas dan peminjaman yang tercatat dalam sistem.</p>
-                </div>
-                <span class="dash-label">● Data sistem</span>
-            </div>
-
-            <div class="row g-3">
-                @foreach($stats as $label => $value)
-                    @php
-                        $config = $statConfig[$label] ?? ['icon' => '▤', 'color' => 'blue'];
-                    @endphp
-                    <div class="col-6 col-xl-4">
-                        <article class="dash-stat dash-reveal" style="--i:{{ $loop->index + 2 }}">
-                            <div class="dash-stat-top">
-                                <div class="dash-stat-icon {{ $config['color'] }}">
-                                    {{ $config['icon'] }}
-                                </div>
-                                <span class="dash-stat-mark">↗</span>
-                            </div>
-                            <div class="dash-stat-number" data-count="{{ (int) $value }}">{{ number_format($value) }}</div>
-                            <div class="dash-stat-name">{{ $label }}</div>
-                            <div class="dash-stat-bar {{ $config['color'] }}"></div>
-                        </article>
-                    </div>
-                @endforeach
-            </div>
-
-            {{-- Insight tambahan (dihitung dari data yang sama) --}}
-            <div class="row g-3 mt-0">
-                <div class="col-6 col-xl-3">
-                    <div class="dash-insight dash-reveal" style="--i:8">
-                        <div class="dash-insight-icon">⌁</div>
-                        <div>
-                            <strong data-count="{{ $totalYear }}">{{ number_format($totalYear) }}</strong>
-                            <span>Pengajuan tahun {{ now()->year }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-xl-3">
-                    <div class="dash-insight dash-reveal" style="--i:9">
-                        <div class="dash-insight-icon">★</div>
-                        <div>
-                            <strong>{{ $peakLabel }}</strong>
-                            <span>Bulan teramai ({{ $peakValue }} pengajuan)</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-xl-3">
-                    <div class="dash-insight dash-reveal" style="--i:10">
-                        <div class="dash-insight-icon">∅</div>
-                        <div>
-                            <strong>{{ $avgMonthly }}</strong>
-                            <span>Rata-rata per bulan aktif</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-6 col-xl-3">
-                    <div class="dash-insight dash-reveal" style="--i:11">
-                        @if($availPct !== null)
-                            <div class="dash-ring" style="--offset: {{ 100 - $availPct }};">
-                                <svg viewBox="0 0 36 36" aria-hidden="true">
-                                    <circle class="track" cx="18" cy="18" r="15.915" pathLength="100"></circle>
-                                    <circle class="value" cx="18" cy="18" r="15.915" pathLength="100"></circle>
-                                </svg>
-                                <b>{{ $availPct }}%</b>
-                            </div>
-                            <div>
-                                <strong>Ketersediaan</strong>
-                                <span>Fasilitas siap dipakai</span>
-                            </div>
-                        @else
-                            <div class="dash-insight-icon">▦</div>
-                            <div>
-                                <strong data-count="{{ (int) $totalFac }}">{{ number_format($totalFac) }}</strong>
-                                <span>Total fasilitas tercatat</span>
-                            </div>
-                        @endif
-                    </div>
+                    <strong>{{ $peakLabel }}</strong>
+                    <span class="cap">Bulan teramai ({{ $peakValue }} pengajuan)</span>
                 </div>
             </div>
-
-            <div class="dash-section-title" id="sec-chart">
+            <div class="dash-strip-item">
+                <div class="dash-strip-icon">{!! $svg('bars') !!}</div>
                 <div>
-                    <h5>Analisis Aktivitas</h5>
-                    <p>Visualisasi tren peminjaman dan kondisi fasilitas kampus.</p>
+                    <strong>{{ $avgMonthly }}</strong>
+                    <span class="cap">Rata-rata per bulan aktif</span>
                 </div>
             </div>
-
-            <div class="row g-3">
-                <div class="col-12 col-xl-7">
-                    <section class="dash-panel dash-reveal" style="--i:12">
-                        <div class="dash-panel-head">
-                            <div>
-                                <h6>Tren Peminjaman</h6>
-                                <p>Jumlah pengajuan per bulan pada tahun {{ now()->year }}.</p>
-                            </div>
-                            <span class="dash-panel-icon">⌁</span>
-                        </div>
-
-                        @if($hasBorrowingData)
-                            <div class="dash-chart">
-                                <canvas id="borrowingChart"></canvas>
-                            </div>
-                        @else
-                            <div class="dash-empty-chart">
-                                <span style="font-size:2rem;">⌁</span>
-                                <strong>Belum ada aktivitas peminjaman</strong>
-                                <small>Grafik akan menampilkan data setelah terdapat pengajuan.</small>
-                            </div>
-                        @endif
-                    </section>
-                </div>
-
-                <div class="col-12 col-xl-5">
-                    <section class="dash-panel dash-reveal" style="--i:13">
-                        <div class="dash-panel-head">
-                            <div>
-                                <h6>Distribusi Fasilitas</h6>
-                                <p>Komposisi berdasarkan status fasilitas.</p>
-                            </div>
-                            <span class="dash-panel-icon">◉</span>
-                        </div>
-
-                        @if($hasFacilityData)
-                            <div class="dash-chart">
-                                <canvas id="facilityChart"></canvas>
-                            </div>
-                        @else
-                            <div class="dash-empty-chart">
-                                <span style="font-size:2rem;">◉</span>
-                                <strong>Belum ada data fasilitas</strong>
-                                <small>Distribusi akan muncul setelah data fasilitas tersedia.</small>
-                            </div>
-                        @endif
-                    </section>
-                </div>
-            </div>
-
-            <section class="dash-panel dash-activity dash-reveal" id="sec-activity" style="--i:14">
-                <div class="dash-panel-head" style="margin-bottom:20px;">
+            <div class="dash-strip-item">
+                @if($availPct !== null)
+                    <div class="dash-ring" style="--offset: {{ 100 - $availPct }};">
+                        <svg viewBox="0 0 36 36" aria-hidden="true">
+                            <circle class="track" cx="18" cy="18" r="15.915" pathLength="100"></circle>
+                            <circle class="value" cx="18" cy="18" r="15.915" pathLength="100"></circle>
+                        </svg>
+                        <b>{{ $availPct }}%</b>
+                    </div>
                     <div>
-                        <h6>Aktivitas Peminjaman Terbaru</h6>
-                        <p>
-                            @if($isAdmin)
-                                Pengajuan terbaru dari seluruh pengguna.
-                            @else
-                                Riwayat pengajuan peminjaman milikmu.
-                            @endif
-                        </p>
-                    </div>
-
-                    @unless($isPetugas)
-                        <a href="{{ route('borrowings.index') }}" class="dash-view-all">
-                            Lihat semua →
-                        </a>
-                    @endunless
-                </div>
-
-                @if($recentBorrowings->count())
-                    <div class="dash-table-wrap">
-                        <table class="dash-table">
-                            <thead>
-                                <tr>
-                                    <th>No.</th>
-                                    @if($isAdmin)
-                                        <th>Pengguna</th>
-                                    @endif
-                                    <th>Fasilitas</th>
-                                    <th>Tanggal Pengajuan</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($recentBorrowings as $index => $borrowing)
-                                    @php
-                                        $status = strtolower((string) $borrowing->status);
-
-                                        $statusClass = match($status) {
-                                            'menunggu' => 'menunggu',
-                                            'disetujui' => 'disetujui',
-                                            'ditolak' => 'ditolak',
-                                            'dipinjam', 'sedang_digunakan' => 'dipinjam',
-                                            'selesai' => 'selesai',
-                                            default => 'default',
-                                        };
-
-                                        $statusLabel = [
-                                            'menunggu' => 'Menunggu',
-                                            'disetujui' => 'Disetujui',
-                                            'ditolak' => 'Ditolak',
-                                            'dipinjam' => 'Sedang Dipinjam',
-                                            'sedang_digunakan' => 'Sedang Digunakan',
-                                            'selesai' => 'Selesai',
-                                            'dibatalkan' => 'Dibatalkan',
-                                        ][$status] ?? ucfirst(str_replace('_', ' ', $status));
-
-                                        $personName = $borrowing->user->name ?? 'Pengguna';
-                                    @endphp
-
-                                    <tr>
-                                        <td style="color:#9aabba;font-weight:700;">
-                                            {{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}
-                                        </td>
-
-                                        @if($isAdmin)
-                                            <td>
-                                                <div class="dash-person">
-                                                    <span class="dash-avatar">
-                                                        {{ mb_strtoupper(mb_substr($personName, 0, 1)) }}
-                                                    </span>
-                                                    {{ $personName }}
-                                                </div>
-                                            </td>
-                                        @endif
-
-                                        <td>
-                                            <strong style="color:#31546f;">
-                                                {{ $borrowing->facility->name ?? $borrowing->facility->nama ?? 'Fasilitas' }}
-                                            </strong>
-                                        </td>
-
-                                        <td>
-                                            {{ $borrowing->created_at?->format('d M Y') ?? '-' }}
-                                        </td>
-
-                                        <td>
-                                            <span class="dash-status {{ $statusClass }}">
-                                                {{ $statusLabel }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                        <strong>Ketersediaan</strong>
+                        <span class="cap">Fasilitas siap dipakai</span>
                     </div>
                 @else
-                    <div class="dash-empty">
-                        <span class="empty-icon">▤</span>
+                    <div class="dash-strip-icon">{!! $svg('building') !!}</div>
+                    <div>
+                        <strong data-count="{{ (int) $totalFac }}">{{ number_format($totalFac) }}</strong>
+                        <span class="cap">Total fasilitas tercatat</span>
+                    </div>
+                @endif
+            </div>
+        </section>
+
+        <div class="dash-section-title">
+            <div>
+                <h5>Analisis Aktivitas</h5>
+                <p>Visualisasi tren peminjaman dan kondisi fasilitas kampus.</p>
+            </div>
+        </div>
+
+        <div class="dash-charts">
+            <section class="dash-card dash-panel dash-reveal" style="--i:7">
+                <div class="dash-panel-head">
+                    <div>
+                        <h6>Tren Peminjaman</h6>
+                        <p>Jumlah pengajuan per bulan pada tahun {{ now()->year }}.</p>
+                    </div>
+                    <span class="dash-panel-icon">{!! $svg('activity') !!}</span>
+                </div>
+
+                @if($hasBorrowingData)
+                    <div class="dash-chart">
+                        <canvas id="borrowingChart"></canvas>
+                    </div>
+                @else
+                    <div class="dash-empty-chart">
+                        {!! $svg('activity') !!}
                         <strong>Belum ada aktivitas peminjaman</strong>
-                        <small>Data pengajuan akan ditampilkan di bagian ini.</small>
+                        <small>Grafik akan menampilkan data setelah terdapat pengajuan.</small>
                     </div>
                 @endif
             </section>
 
-            @if($isPetugas)
-                <div class="dash-petugas-note dash-reveal" style="--i:15">
-                    <span>ⓘ Anda dapat melihat daftar dan kondisi fasilitas melalui menu Fasilitas.</span>
-                    <a href="{{ route('facilities.index') }}">Buka Daftar Fasilitas →</a>
+            <section class="dash-card dash-panel dash-reveal" style="--i:8">
+                <div class="dash-panel-head">
+                    <div>
+                        <h6>Distribusi Fasilitas</h6>
+                        <p>Komposisi berdasarkan status fasilitas.</p>
+                    </div>
+                    <span class="dash-panel-icon">{!! $svg('pie') !!}</span>
+                </div>
+
+                @if($hasFacilityData)
+                    <div class="dash-chart">
+                        <canvas id="facilityChart"></canvas>
+                    </div>
+                @else
+                    <div class="dash-empty-chart">
+                        {!! $svg('pie') !!}
+                        <strong>Belum ada data fasilitas</strong>
+                        <small>Distribusi akan muncul setelah data fasilitas tersedia.</small>
+                    </div>
+                @endif
+            </section>
+        </div>
+
+        <section class="dash-card dash-panel dash-reveal" style="--i:9">
+            <div class="dash-panel-head" style="margin-bottom:18px;">
+                <div>
+                    <h6>Aktivitas Peminjaman Terbaru</h6>
+                    <p>
+                        @if($isAdmin)
+                            Pengajuan terbaru dari seluruh pengguna.
+                        @else
+                            Riwayat pengajuan peminjaman milikmu.
+                        @endif
+                    </p>
+                </div>
+
+                @unless($isPetugas)
+                    <a href="{{ route('borrowings.index') }}" class="dash-view-all">
+                        Lihat semua {!! $svg('chevron') !!}
+                    </a>
+                @endunless
+            </div>
+
+            @if($recentBorrowings->count())
+                <div class="dash-table-wrap">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>No.</th>
+                                @if($isAdmin)
+                                    <th>Pengguna</th>
+                                @endif
+                                <th>Fasilitas</th>
+                                <th>Tanggal Pengajuan</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($recentBorrowings as $index => $borrowing)
+                                @php
+                                    $status = strtolower((string) $borrowing->status);
+
+                                    $statusClass = match($status) {
+                                        'menunggu' => 'menunggu',
+                                        'disetujui' => 'disetujui',
+                                        'ditolak' => 'ditolak',
+                                        'dipinjam', 'sedang_digunakan' => 'dipinjam',
+                                        'selesai' => 'selesai',
+                                        default => 'default',
+                                    };
+
+                                    $statusLabel = [
+                                        'menunggu' => 'Menunggu',
+                                        'disetujui' => 'Disetujui',
+                                        'ditolak' => 'Ditolak',
+                                        'dipinjam' => 'Sedang Dipinjam',
+                                        'sedang_digunakan' => 'Sedang Digunakan',
+                                        'selesai' => 'Selesai',
+                                        'dibatalkan' => 'Dibatalkan',
+                                    ][$status] ?? ucfirst(str_replace('_', ' ', $status));
+
+                                    $personName = $borrowing->user->name ?? 'Pengguna';
+                                @endphp
+
+                                <tr>
+                                    <td style="color:#9aabba;font-weight:700;">
+                                        {{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}
+                                    </td>
+
+                                    @if($isAdmin)
+                                        <td>
+                                            <div class="dash-person">
+                                                <span class="dash-avatar">
+                                                    {{ mb_strtoupper(mb_substr($personName, 0, 1)) }}
+                                                </span>
+                                                {{ $personName }}
+                                            </div>
+                                        </td>
+                                    @endif
+
+                                    <td>
+                                        <strong style="color:#31546f;">
+                                            {{ $borrowing->facility->name ?? $borrowing->facility->nama ?? 'Fasilitas' }}
+                                        </strong>
+                                    </td>
+
+                                    <td>
+                                        {{ $borrowing->created_at?->format('d M Y') ?? '-' }}
+                                    </td>
+
+                                    <td>
+                                        <span class="dash-status {{ $statusClass }}">
+                                            {{ $statusLabel }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="dash-empty">
+                    {!! $svg('file') !!}
+                    <strong>Belum ada aktivitas peminjaman</strong>
+                    <small>Data pengajuan akan ditampilkan di bagian ini.</small>
                 </div>
             @endif
+        </section>
 
-        </div>
+        @if($isPetugas)
+            <div class="dash-card dash-petugas-note dash-reveal" style="--i:10">
+                <span>{!! $svg('info') !!} Anda dapat melihat daftar dan kondisi fasilitas melalui menu Fasilitas.</span>
+                <a href="{{ route('facilities.index') }}">Buka Daftar Fasilitas</a>
+            </div>
+        @endif
+
     </div>
   </div>
 </div>
@@ -920,43 +731,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    /* ---- Rel ikon: tandai bagian yang sedang dilihat ---- */
-    const railLinks = document.querySelectorAll('.dash-rail a');
-    railLinks.forEach(function (link) {
-        link.addEventListener('click', function (e) {
-            const target = document.querySelector(link.getAttribute('href'));
-            if (!target) return;
-            e.preventDefault();
-            target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-        });
-    });
-
-    if ('IntersectionObserver' in window) {
-        const observer = new IntersectionObserver(function (entries) {
-            entries.forEach(function (entry) {
-                if (!entry.isIntersecting) return;
-                railLinks.forEach(function (l) {
-                    l.classList.toggle('active', l.getAttribute('href') === '#' + entry.target.id);
-                });
-            });
-        }, { rootMargin: '-20% 0px -65% 0px' });
-
-        ['sec-stat', 'sec-chart', 'sec-activity'].forEach(function (id) {
-            const el = document.getElementById(id);
-            if (el) observer.observe(el);
-        });
-    }
-
     /* ---- Grafik ---- */
     const borrowingCanvas = document.getElementById('borrowingChart');
     const facilityCanvas = document.getElementById('facilityChart');
-
     const chartFont = { family: 'Inter, sans-serif' };
 
     if (borrowingCanvas) {
         const ctx = borrowingCanvas.getContext('2d');
-        const gradient = ctx.createLinearGradient(0, 0, 0, 265);
-        gradient.addColorStop(0, 'rgba(54,139,208,.32)');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 270);
+        gradient.addColorStop(0, 'rgba(54,139,208,.30)');
         gradient.addColorStop(1, 'rgba(54,139,208,0)');
 
         new Chart(borrowingCanvas, {
@@ -1006,7 +789,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const facilityValues = @json($facilityStatusValues);
         const facilityTotal = facilityValues.reduce(function (a, b) { return a + Number(b); }, 0);
 
-        /* Teks total di tengah donat */
+        /* Total di tengah donat */
         const centerText = {
             id: 'centerText',
             afterDraw: function (chart) {
@@ -1019,8 +802,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 c.fillStyle = '#183e60';
                 c.font = '800 26px Inter, sans-serif';
                 c.fillText(facilityTotal.toLocaleString('en-US'), meta.x, meta.y - 8);
-                c.fillStyle = '#8ba0b3';
-                c.font = '600 11px Inter, sans-serif';
+                c.fillStyle = '#7e94a7';
+                c.font = '600 12px Inter, sans-serif';
                 c.fillText('Fasilitas', meta.x, meta.y + 14);
                 c.restore();
             }
@@ -1050,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             usePointStyle: true,
                             pointStyle: 'circle',
                             padding: 18,
-                            font: { family: 'Inter, sans-serif', size: 11 },
+                            font: { family: 'Inter, sans-serif', size: 12 },
                             color: '#637c90'
                         }
                     },
