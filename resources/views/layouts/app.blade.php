@@ -27,6 +27,7 @@
             'admin'      => 'Administrator',
             'mahasiswa'  => 'Mahasiswa',
             'organisasi' => 'Organisasi',
+            'petugas'    => 'Petugas',
         ][$user->role] ?? ucfirst((string) $user->role);
 
         $initials = collect(preg_split('/\s+/', trim((string) $user->name)))
