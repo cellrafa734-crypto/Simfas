@@ -4,823 +4,278 @@
 
 @section('content')
 @php
-    $totalFacilities = $items->total();
+    $user = auth()->user();
+    $isAdmin = $user->isAdmin();
+    $canBorrow = in_array($user->role, ['mahasiswa', 'organisasi'], true);
+
+    $statusLabels = [
+        'tersedia'              => 'Tersedia',
+        'dipinjam'              => 'Sedang dipinjam',
+        'pemeliharaan'          => 'Pemeliharaan',
+        'tidak_dapat_digunakan' => 'Tidak dapat digunakan',
+    ];
+
+    $conditionLabels = [
+        'baik'         => 'Baik',
+        'rusak_ringan' => 'Rusak ringan',
+        'rusak_sedang' => 'Rusak sedang',
+        'rusak_berat'  => 'Rusak berat',
+    ];
+
+    $categories = $items->pluck('category')->filter()->unique()->sort()->values();
+
+    $facImg = function ($f) {
+        if ($f->image_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($f->image_path)) {
+            return asset('storage/' . $f->image_path);
+        }
+        $n = strtolower($f->name ?? '');
+        $map = [
+            'ruang belajar' => 'kelas', 'kelas' => 'kelas',
+            'laboratorium' => 'laboratorium', 'lab' => 'laboratorium',
+            'proyektor' => 'proyektor', 'aula' => 'aula',
+            'sound' => 'sound-system', 'speaker' => 'sound-system',
+        ];
+        foreach ($map as $kw => $file) {
+            if (str_contains($n, $kw) && file_exists(public_path("images/facilities/$file.jpg"))) {
+                return asset("images/facilities/$file.jpg");
+            }
+        }
+        return null;
+    };
 @endphp
 
 <style>
-    .facility-page {
-        color: #183e60;
-    }
-
-    /* HERO */
-    .facility-hero {
-        position: relative;
-        overflow: hidden;
-        min-height: 220px;
-        padding: 35px 38px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 25px;
-        border-radius: 22px;
-        background:
-            linear-gradient(100deg, rgba(13, 48, 78, .96), rgba(35, 109, 169, .87)),
-            url("{{ asset('images/facilities/kelas.jpg') }}") center/cover;
-        box-shadow: 0 14px 35px rgba(24, 62, 96, .13);
-        margin-bottom: 28px;
-    }
-
-    .facility-hero::after {
-        content: "";
-        position: absolute;
-        width: 270px;
-        height: 270px;
-        right: 8%;
-        top: -145px;
-        border: 1px solid rgba(255,255,255,.15);
-        border-radius: 50%;
-        box-shadow: 0 0 0 35px rgba(255,255,255,.035),
-                    0 0 0 70px rgba(255,255,255,.025);
-    }
-
-    .facility-hero-content {
-        position: relative;
-        z-index: 2;
-        max-width: 590px;
-    }
-
-    .facility-hero-tag {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 13px;
-        border: 1px solid rgba(255,255,255,.25);
-        background: rgba(255,255,255,.10);
-        border-radius: 30px;
-        color: #d9efff;
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: 1.3px;
-        margin-bottom: 17px;
-    }
-
-    .facility-hero h2 {
-        color: white;
-        font-size: clamp(24px, 3vw, 34px);
-        font-weight: 800;
-        letter-spacing: -.8px;
-        margin: 0 0 10px;
-    }
-
-    .facility-hero p {
-        color: rgba(255,255,255,.78);
-        font-size: 13px;
-        line-height: 1.8;
-        margin: 0;
-    }
-
-    .facility-hero-action {
-        position: relative;
-        z-index: 2;
-        flex-shrink: 0;
-    }
-
-    .facility-add-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 9px;
-        padding: 13px 20px;
-        border-radius: 11px;
-        color: #236da9;
-        background: white;
-        font-size: 12px;
-        font-weight: 800;
-        text-decoration: none;
-        box-shadow: 0 8px 22px rgba(0,0,0,.13);
-        transition: .25s ease;
-    }
-
-    .facility-add-btn:hover {
-        color: #183e60;
-        background: #eaf5ff;
-        transform: translateY(-3px);
-    }
-
-    /* SECTION HEADING */
-    .facility-section-heading {
-        display: flex;
-        justify-content: space-between;
-        align-items: end;
-        gap: 15px;
-        margin-bottom: 18px;
-    }
-
-    .facility-section-heading h3 {
-        color: #183e60;
-        font-size: 18px;
-        font-weight: 800;
-        margin: 0 0 5px;
-    }
-
-    .facility-section-heading p {
-        color: #8799a9;
-        font-size: 12px;
-        margin: 0;
-    }
-
-    .facility-total {
-        color: #368bd0;
-        background: #eaf5ff;
-        padding: 8px 13px;
-        border-radius: 9px;
-        font-size: 11px;
-        font-weight: 800;
-        white-space: nowrap;
-    }
-
-    /* TOOLBAR */
-    .facility-toolbar {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px;
-        background: white;
-        border: 1px solid #e9f0f6;
-        border-radius: 15px;
-        box-shadow: 0 5px 18px rgba(24,62,96,.035);
-        margin-bottom: 22px;
-    }
-
-    .facility-search {
-        position: relative;
-        flex: 1;
-    }
-
-    .facility-search span {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #91a6b8;
-        font-size: 17px;
-    }
-
-    .facility-search input {
-        width: 100%;
-        height: 43px;
-        padding: 0 14px 0 42px;
-        border: 1px solid #e5edf4;
-        border-radius: 10px;
-        outline: none;
-        color: #183e60;
-        background: #fafdff;
-        font-size: 12px;
-        transition: .2s;
-    }
-
-    .facility-search input:focus {
-        border-color: #75b8e8;
-        box-shadow: 0 0 0 3px rgba(54,139,208,.09);
-    }
-
-    .facility-filter {
-        height: 43px;
-        min-width: 165px;
-        padding: 0 13px;
-        border: 1px solid #e5edf4;
-        border-radius: 10px;
-        background: #fafdff;
-        color: #536d83;
-        font-size: 12px;
-        outline: none;
-        cursor: pointer;
-    }
-
-    /* FACILITY CARDS */
-    .facility-grid {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 20px;
-    }
-
-    .facility-item {
-        min-width: 0;
-        overflow: hidden;
-        background: white;
-        border: 1px solid #e9f0f6;
-        border-radius: 17px;
-        box-shadow: 0 6px 22px rgba(24,62,96,.045);
-        transition: transform .3s ease, box-shadow .3s ease;
-        animation: facilityAppear .5s ease both;
-    }
-
-    .facility-item:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 15px 32px rgba(35,109,169,.12);
-    }
-
-    @keyframes facilityAppear {
-        from {
-            opacity: 0;
-            transform: translateY(15px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .facility-image {
-        position: relative;
-        height: 175px;
-        overflow: hidden;
-        background: linear-gradient(135deg, #d9edff, #f0f8ff);
-    }
-
-    .facility-image img {
-        width: 100%;
-        height: 100%;
-        display: block;
-        object-fit: cover;
-        transition: transform .5s ease;
-    }
-
-    .facility-item:hover .facility-image img {
-        transform: scale(1.07);
-    }
-
-    .facility-image-placeholder {
-        width: 100%;
-        height: 100%;
-        display: grid;
-        place-items: center;
-        color: #368bd0;
-        font-size: 42px;
-        font-weight: 800;
-        background:
-            radial-gradient(circle at 20% 20%, white, transparent 45%),
-            linear-gradient(135deg, #dcefff, #f1f9ff);
-    }
-
-    .facility-image img[hidden],
-    .facility-image-placeholder[hidden] { display: none; }
-
-    .facility-image-placeholder {
-        gap: 6px;
-        align-content: center;
-        justify-items: center;
-    }
-
-    .facility-image-placeholder svg {
-        width: 34px;
-        height: 34px;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.6;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        opacity: .75;
-    }
-
-    .facility-image-placeholder small {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: .02em;
-        color: #6f95b8;
-    }
-
-    .facility-code {
-        position: absolute;
-        left: 13px;
-        top: 13px;
-        padding: 6px 10px;
-        color: #183e60;
-        background: rgba(255,255,255,.92);
-        border-radius: 7px;
-        font-size: 10px;
-        font-weight: 800;
-        box-shadow: 0 3px 10px rgba(0,0,0,.07);
-    }
-
-    .facility-card-body {
-        padding: 17px;
-    }
-
-    .facility-card-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 10px;
-        margin-bottom: 13px;
-    }
-
-    .facility-card-top h4 {
-        color: #183e60;
-        font-size: 15px;
-        font-weight: 800;
-        line-height: 1.5;
-        margin: 0;
-    }
-
-    .facility-status {
-        flex-shrink: 0;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 9px;
-        border-radius: 20px;
-        font-size: 9px;
-        font-weight: 800;
-        text-transform: capitalize;
-    }
-
-    .facility-status::before {
-        content: "";
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: currentColor;
-    }
-
-    .status-tersedia {
-        color: #15966a;
-        background: #e7f8f0;
-    }
-
-    .status-dipinjam {
-        color: #bd841b;
-        background: #fff6df;
-    }
-
-    .status-pemeliharaan {
-        color: #d17a27;
-        background: #fff0e3;
-    }
-
-    .status-tidak-dapat-digunakan {
-        color: #d14f5b;
-        background: #fff0f1;
-    }
-
-    .status-neutral {
-        color: #71869a;
-        background: #edf2f6;
-    }
-
-    .facility-detail-list {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 11px;
-        padding: 13px 0;
-        border-top: 1px solid #edf2f6;
-        border-bottom: 1px solid #edf2f6;
-    }
-
-    .facility-detail-label {
-        display: block;
-        color: #98a8b6;
-        font-size: 10px;
-        margin-bottom: 5px;
-    }
-
-    .facility-detail-value {
-        display: block;
-        color: #536d83;
-        font-size: 11px;
-        font-weight: 700;
-        overflow-wrap: anywhere;
-    }
-
-    .facility-condition {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        margin-top: 13px;
-    }
-
-    .facility-condition span:first-child {
-        color: #91a2b0;
-        font-size: 10px;
-    }
-
-    .facility-condition strong {
-        color: #536d83;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: capitalize;
-    }
-
-    .facility-card-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 15px;
-    }
-
-    .facility-edit-btn,
-    .facility-delete-btn {
-        flex: 1;
-        display: inline-flex;
-        justify-content: center;
-        align-items: center;
-        gap: 6px;
-        padding: 9px 10px;
-        border-radius: 8px;
-        font-size: 11px;
-        font-weight: 700;
-        transition: .2s;
-        font-family: inherit;
-        line-height: 1.2;
-        cursor: pointer;
-    }
-
-    .facility-edit-btn {
-        color: #287dbb;
-        border: 1px solid #d7eafa;
-        background: #f1f8ff;
-        text-decoration: none;
-    }
-
-    .facility-edit-btn:hover {
-        color: white;
-        background: #368bd0;
-        border-color: #368bd0;
-    }
-
-    .facility-delete-btn {
-        color: #d45460;
-        border: 1px solid #f4dfe1;
-        background: #fff7f7;
-    }
-
-    .facility-delete-btn:hover {
-        color: white;
-        background: #d45460;
-        border-color: #d45460;
-    }
-
-    /* EMPTY STATE */
-    .facility-empty {
-        grid-column: 1 / -1;
-        padding: 55px 20px;
-        text-align: center;
-        background: white;
-        border: 1px dashed #d7e6f2;
-        border-radius: 17px;
-    }
-
-    .facility-empty-icon {
-        width: 65px;
-        height: 65px;
-        display: grid;
-        place-items: center;
-        margin: 0 auto 16px;
-        color: #368bd0;
-        background: #eaf5ff;
-        border-radius: 20px;
-        font-size: 27px;
-    }
-
-    .facility-empty h4 {
-        color: #183e60;
-        font-size: 16px;
-        font-weight: 800;
-    }
-
-    .facility-empty p {
-        color: #91a2b0;
-        font-size: 12px;
-        margin: 7px 0 0;
-    }
-
-    .facility-pagination {
-        margin-top: 25px;
-    }
-
-    .facility-pagination nav {
-        display: flex;
-        justify-content: center;
-    }
-
-    .facility-pagination .pagination {
-        gap: 5px;
-    }
-
-    .facility-pagination .page-link {
-        border: 1px solid #e5edf4;
-        border-radius: 8px !important;
-        color: #368bd0;
-        font-size: 12px;
-        box-shadow: none;
-    }
-
-    .facility-pagination .active .page-link {
-        color: white;
-        background: #368bd0;
-        border-color: #368bd0;
-    }
-
-    @media(max-width: 1100px) {
-        .facility-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-    }
-
-    @media(max-width: 650px) {
-        .facility-page { overflow-x: hidden; }
-
-        .facility-hero h2 { word-break: break-word; }
-
-        .facility-hero-tag {
-            font-size: 9px;
-            letter-spacing: 1px;
-            max-width: 100%;
-        }
-
-        .facility-card-actions { flex-direction: column; }
-
-        .facility-edit-btn,
-        .facility-delete-btn { padding: 11px 10px; }
-
-        .facility-hero {
-            min-height: 230px;
-            padding: 25px 22px;
-            align-items: flex-start;
-            flex-direction: column;
-        }
-
-        .facility-hero-action {
-            width: 100%;
-        }
-
-        .facility-add-btn {
-            width: 100%;
-        }
-
-        .facility-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .facility-toolbar {
-            align-items: stretch;
-            flex-direction: column;
-        }
-
-        .facility-filter {
-            width: 100%;
-        }
-
-        .facility-section-heading {
-            align-items: flex-start;
-        }
-    }
+    .sf-fp { display: grid; gap: 20px; }
+    .sf-fp h2, .sf-fp h4 { margin: 0; }
+
+    .sf-fp-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .sf-fp-head h2 { font-size: 1.6rem; letter-spacing: -.02em; }
+    .sf-fp-head p { margin: 4px 0 0; color: var(--muted); }
+
+    .sf-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        padding: 11px 18px; border-radius: var(--radius-md); font-weight: 700; font-size: .92rem;
+        text-decoration: none; border: 0; cursor: pointer;
+        background: linear-gradient(135deg, var(--blue-600), var(--blue-700)); color: #fff;
+        box-shadow: 0 8px 20px rgba(37, 99, 235, .25);
+        transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+    }
+    .sf-btn:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 12px 26px rgba(37, 99, 235, .34); }
+
+    /* Pencarian + filter */
+    .sf-tools { display: grid; gap: 12px; }
+    .sf-search { position: relative; }
+    .sf-search svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; stroke: var(--muted); fill: none; stroke-width: 2; stroke-linecap: round; }
+    .sf-search input {
+        width: 100%; padding: 13px 16px 13px 42px; border: 1px solid var(--line); border-radius: var(--radius-md);
+        background: var(--surface); font-size: .95rem; color: var(--ink);
+        transition: border-color .2s, box-shadow .2s;
+    }
+    .sf-search input:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 4px rgba(59, 130, 246, .15); }
+
+    .sf-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .sf-chip-btn {
+        padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface);
+        color: var(--ink-soft); font-size: .85rem; font-weight: 600; cursor: pointer;
+        transition: all .18s var(--ease);
+    }
+    .sf-chip-btn:hover { border-color: var(--blue-400); color: var(--blue-700); }
+    .sf-chip-btn.on { background: var(--navy-900); border-color: var(--navy-900); color: #fff; }
+    .sf-chip-label { font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-right: 4px; }
+    .sf-count { font-size: .88rem; color: var(--muted); }
+
+    /* Kartu */
+    .sf-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 18px; }
+    .sf-card {
+        display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line);
+        border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-xs);
+        transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s;
+        animation: sfIn .45s var(--ease) backwards;
+    }
+    .sf-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); border-color: #bcd2f5; }
+    @keyframes sfIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+    .sf-photo { position: relative; aspect-ratio: 16 / 10; background: linear-gradient(135deg, var(--blue-50), #e2ecfb); overflow: hidden; }
+    .sf-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s var(--ease); }
+    .sf-card:hover .sf-photo img { transform: scale(1.05); }
+    .sf-ph { position: absolute; inset: 0; display: grid; place-items: center; color: #8fb0e6; }
+    .sf-ph svg { width: 38px; height: 38px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+
+    .sf-badge {
+        position: absolute; top: 12px; left: 12px; display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 11px; border-radius: 999px; font-size: .75rem; font-weight: 700;
+        background: rgba(255, 255, 255, .95); box-shadow: 0 2px 8px rgba(10, 31, 68, .15);
+    }
+    .sf-badge i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .s-tersedia { color: #166534; } .s-tersedia i { background: #22c55e; }
+    .s-dipinjam { color: #1d4ed8; } .s-dipinjam i { background: #3b82f6; }
+    .s-pemeliharaan { color: #92400e; } .s-pemeliharaan i { background: #f59e0b; }
+    .s-tidak_dapat_digunakan { color: #991b1b; } .s-tidak_dapat_digunakan i { background: #ef4444; }
+
+    .sf-body { display: flex; flex-direction: column; gap: 10px; padding: 16px; flex: 1; }
+    .sf-body h4 { font-size: 1.05rem; }
+    .sf-info { display: grid; gap: 4px; color: var(--ink-soft); font-size: .88rem; }
+    .sf-info span { display: flex; align-items: center; gap: 7px; }
+    .sf-info svg { width: 15px; height: 15px; stroke: var(--muted); fill: none; stroke-width: 2; flex: none; }
+    .sf-desc { margin: 0; color: var(--muted); font-size: .85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .sf-warn { align-self: flex-start; padding: 3px 10px; border-radius: 999px; background: #fffbeb; border: 1px solid #fde7a2; color: #92400e; font-size: .76rem; font-weight: 600; }
+
+    .sf-foot { margin-top: auto; padding-top: 6px; display: flex; gap: 8px; }
+    .sf-foot .sf-btn { flex: 1; }
+    .sf-off { flex: 1; text-align: center; padding: 11px; border-radius: var(--radius-md); background: #eef2f7; color: #64748b; font-weight: 600; font-size: .88rem; }
+    .sf-edit, .sf-del {
+        flex: 1; padding: 10px; border-radius: var(--radius-md); font-weight: 700; font-size: .86rem;
+        text-align: center; text-decoration: none; cursor: pointer; border: 1px solid;
+    }
+    .sf-edit { background: var(--blue-50); border-color: var(--blue-100); color: var(--blue-700); }
+    .sf-edit:hover { background: var(--blue-600); color: #fff; }
+    .sf-del { background: #fff; border-color: #fbcaca; color: #b91c1c; width: 100%; }
+    .sf-del:hover { background: #dc2626; border-color: #dc2626; color: #fff; }
+
+    .sf-empty { grid-column: 1 / -1; text-align: center; padding: 48px 20px; background: var(--surface); border: 1px dashed #c3d3ea; border-radius: var(--radius-lg); color: var(--muted); }
+    .sf-empty h4 { color: var(--navy-900); margin-bottom: 6px; }
+    .sf-reset { margin-top: 10px; background: none; border: 0; color: var(--blue-600); font-weight: 700; cursor: pointer; }
+
+    @media (prefers-reduced-motion: reduce) { .sf-card { animation: none; } }
+    @media (max-width: 560px) { .sf-btn.sf-add { width: 100%; } }
 </style>
 
-<div class="facility-page">
+<div class="sf-fp">
 
-    {{-- HERO --}}
-    <section class="facility-hero">
-        <div class="facility-hero-content">
-            <div class="facility-hero-tag">
-                <span>✦</span>
-                SISTEM INFORMASI FASILITAS KAMPUS
-            </div>
-
-            <h2>Fasilitas Kampus</h2>
-
+    <section class="sf-fp-head">
+        <div>
+            <h2>Fasilitas</h2>
             <p>
-                Temukan dan pantau informasi sarana serta prasarana kampus
-                dalam satu sistem yang terorganisir dan mudah diakses.
+                @if($isAdmin)
+                    Kelola ruang dan peralatan kampus.
+                @else
+                    Pilih ruang atau peralatan, lalu ajukan peminjaman langsung dari sini.
+                @endif
             </p>
         </div>
 
-        @if(auth()->user()->isAdmin())
-            <div class="facility-hero-action">
-                <a href="/facilities/create" class="facility-add-btn">
-                    <span style="font-size:18px;">＋</span>
-                    Tambah Fasilitas
-                </a>
-            </div>
+        @if($isAdmin)
+            <a href="/facilities/create" class="sf-btn sf-add">＋ Tambah Fasilitas</a>
         @endif
     </section>
 
-    {{-- JUDUL DAN JUMLAH --}}
-    <div class="facility-section-heading">
-        <div>
-            <h3>Daftar Fasilitas</h3>
-            <p>Informasi fasilitas yang terdaftar dalam sistem SIMFAS.</p>
+    {{-- PENCARIAN + FILTER CEPAT --}}
+    <section class="sf-tools">
+        <div class="sf-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" id="sfSearch" placeholder="Cari nama, kode, atau lokasi..." aria-label="Cari fasilitas" autocomplete="off">
         </div>
 
-        <div class="facility-total">
-            {{ $totalFacilities }} Fasilitas
-        </div>
-    </div>
-
-    {{-- PENCARIAN DAN FILTER --}}
-    <div class="facility-toolbar">
-        <div class="facility-search">
-            <span>⌕</span>
-            <input
-                type="text"
-                id="facilitySearch"
-                aria-label="Cari fasilitas"
-                placeholder="Cari nama, kode, atau lokasi fasilitas..."
-                autocomplete="off"
-            >
+        <div class="sf-chips" id="sfStatusChips">
+            <span class="sf-chip-label">Status</span>
+            <button type="button" class="sf-chip-btn on" data-status="">Semua</button>
+            <button type="button" class="sf-chip-btn" data-status="tersedia">Tersedia</button>
+            <button type="button" class="sf-chip-btn" data-status="dipinjam">Sedang dipinjam</button>
+            @if($isAdmin)
+                <button type="button" class="sf-chip-btn" data-status="pemeliharaan">Pemeliharaan</button>
+                <button type="button" class="sf-chip-btn" data-status="tidak_dapat_digunakan">Tidak dapat digunakan</button>
+            @endif
         </div>
 
-        <select id="facilityStatusFilter" class="facility-filter" aria-label="Filter status fasilitas">
-            <option value="">Semua Status</option>
-            <option value="tersedia">Tersedia</option>
-            <option value="dipinjam">Dipinjam</option>
-            <option value="pemeliharaan">Pemeliharaan</option>
-            <option value="tidak_dapat_digunakan">Tidak dapat digunakan</option>
-        </select>
-    </div>
+        @if($categories->count() > 1)
+            <div class="sf-chips" id="sfCatChips">
+                <span class="sf-chip-label">Jenis</span>
+                <button type="button" class="sf-chip-btn on" data-cat="">Semua</button>
+                @foreach($categories as $cat)
+                    <button type="button" class="sf-chip-btn" data-cat="{{ strtolower($cat) }}">{{ ucfirst($cat) }}</button>
+                @endforeach
+            </div>
+        @endif
 
-    {{-- KARTU FASILITAS --}}
-    <div class="facility-grid" id="facilityGrid">
+        <div class="sf-count" id="sfCount" aria-live="polite">{{ $items->total() }} fasilitas</div>
+    </section>
+
+    {{-- DAFTAR --}}
+    <section class="sf-cards" id="sfCards">
 
         @forelse($items as $f)
-
             @php
-                $facilityName = strtolower($f->name ?? '');
-
-                // Prioritaskan foto yang diunggah pengguna.
-                if ($f->image_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($f->image_path)) {
-                    $imageUrl = asset('storage/' . $f->image_path);
-                } else {
-                    // Foto bawaan hanya dipakai bila nama fasilitas cocok dengan salah satu kata kunci.
-                    // Bila tidak cocok, kartu menampilkan placeholder (bukan foto yang salah).
-                    $imagePath = null;
-
-                    if (
-                        str_contains($facilityName, 'kelas') ||
-                        str_contains($facilityName, 'ruang belajar')
-                    ) {
-                        $imagePath = 'images/facilities/kelas.jpg';
-                    } elseif (
-                        str_contains($facilityName, 'laboratorium') ||
-                        str_contains($facilityName, 'lab')
-                    ) {
-                        $imagePath = 'images/facilities/laboratorium.jpg';
-                    } elseif (str_contains($facilityName, 'proyektor')) {
-                        $imagePath = 'images/facilities/proyektor.jpg';
-                    } elseif (str_contains($facilityName, 'aula')) {
-                        $imagePath = 'images/facilities/aula.jpg';
-                    } elseif (
-                        str_contains($facilityName, 'sound') ||
-                        str_contains($facilityName, 'speaker')
-                    ) {
-                        $imagePath = 'images/facilities/sound-system.jpg';
-                    }
-
-                    $imageUrl = ($imagePath && file_exists(public_path($imagePath)))
-                        ? asset($imagePath)
-                        : null;
-                }
-
                 $status = strtolower($f->status ?? '');
-                $statusLabel = ucfirst(str_replace('_', ' ', $status));
-
-                $conditionLabels = [
-                    'baik'         => 'Baik',
-                    'rusak_ringan' => 'Rusak ringan',
-                    'rusak_sedang' => 'Rusak sedang',
-                    'rusak_berat'  => 'Rusak berat',
-                ];
-                $conditionLabel = $conditionLabels[$f->condition] ?? ($f->condition ? ucfirst(str_replace('_', ' ', $f->condition)) : '-');
-
-                $statusClass = match($status) {
-                    'tersedia' => 'status-tersedia',
-                    'dipinjam' => 'status-dipinjam',
-                    'pemeliharaan' => 'status-pemeliharaan',
-                    'tidak_dapat_digunakan' => 'status-tidak-dapat-digunakan',
-                    default => 'status-neutral',
-                };
+                $img = $facImg($f);
+                $borrowable = in_array($status, ['tersedia', 'dipinjam'], true);
             @endphp
 
-            <article
-                class="facility-item"
-                data-search="{{ strtolower(($f->code ?? '') . ' ' . ($f->name ?? '') . ' ' . ($f->location ?? '') . ' ' . ($f->condition ?? '')) }}"
-                data-status="{{ $status }}"
-            >
+            <article class="sf-card"
+                     style="animation-delay: {{ min($loop->index, 8) * 40 }}ms"
+                     data-search="{{ strtolower(($f->code ?? '') . ' ' . ($f->name ?? '') . ' ' . ($f->location ?? '') . ' ' . ($f->category ?? '')) }}"
+                     data-status="{{ $status }}"
+                     data-cat="{{ strtolower($f->category ?? '') }}">
 
-                <div class="facility-image">
-
-                    @if($imageUrl)
-                        {{-- Bila file gambar gagal dimuat, otomatis ganti ke placeholder --}}
-                        <img
-                            src="{{ $imageUrl }}"
-                            alt="{{ $f->name }}"
-                            loading="lazy"
-                            onerror="this.hidden=true;this.nextElementSibling.hidden=false;"
-                        >
-                    @endif
-
-                    <div class="facility-image-placeholder" @if($imageUrl) hidden @endif>
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <rect x="3" y="3" width="18" height="18" rx="3"/>
-                            <circle cx="9" cy="9" r="1.6"/>
-                            <path d="m21 15-5-5L5 21"/>
-                        </svg>
-                        <small>Belum ada foto</small>
+                <div class="sf-photo">
+                    <div class="sf-ph" @if($img) hidden @endif>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="1.6"/><path d="m21 15-5-5L5 21"/></svg>
                     </div>
-
-                    <span class="facility-code">
-                        {{ $f->code }}
-                    </span>
+                    @if($img)
+                        <img src="{{ $img }}" alt="{{ $f->name }}" loading="lazy"
+                             onerror="this.hidden=true;this.previousElementSibling.hidden=false;">
+                    @endif
+                    <span class="sf-badge s-{{ $status }}"><i></i>{{ $statusLabels[$status] ?? 'Belum diatur' }}</span>
                 </div>
 
-                <div class="facility-card-body">
+                <div class="sf-body">
+                    <h4>{{ $f->name }}</h4>
 
-                    <div class="facility-card-top">
-                        <h4>{{ $f->name }}</h4>
-
-                        <span class="facility-status {{ $statusClass }}">
-                            {{ $statusLabel ?: 'Belum diatur' }}
+                    <div class="sf-info">
+                        <span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                            {{ $f->location ?: '-' }}
+                        </span>
+                        <span>
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="m3 8 0 8 9 5 9-5 0-8"/></svg>
+                            {{ $f->units }} unit
                         </span>
                     </div>
 
-                    <div class="facility-detail-list">
-                        <div>
-                            <span class="facility-detail-label">Lokasi</span>
-                            <span class="facility-detail-value">
-                                {{ $f->location ?: '-' }}
-                            </span>
-                        </div>
-
-                        <div>
-                            <span class="facility-detail-label">Jumlah Unit</span>
-                            <span class="facility-detail-value">
-                                {{ $f->units }} Unit
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="facility-condition">
-                        <span>Kondisi fasilitas</span>
-                        <strong>{{ $conditionLabel }}</strong>
-                    </div>
-
-                    @if(auth()->user()->isAdmin())
-                        <div class="facility-card-actions">
-
-                            <a
-                                href="/facilities/{{ $f->id }}/edit"
-                                class="facility-edit-btn"
-                            >
-                                ✎ Ubah
-                            </a>
-
-                            <form
-                                method="POST"
-                                action="/facilities/{{ $f->id }}"
-                                style="flex:1; margin:0;"
-                                data-confirm="Yakin ingin menghapus fasilitas &quot;{{ $f->name }}&quot;? Tindakan ini tidak dapat dibatalkan."
-                            >
-                                @csrf
-                                @method('DELETE')
-
-                                <button
-                                    type="submit"
-                                    class="facility-delete-btn"
-                                    style="width:100%;"
-                                >
-                                    × Hapus
-                                </button>
-                            </form>
-
-                        </div>
+                    @if($f->description)
+                        <p class="sf-desc">{{ $f->description }}</p>
                     @endif
 
+                    {{-- Kondisi hanya ditampilkan bila perlu diperhatikan --}}
+                    @if($f->condition && $f->condition !== 'baik')
+                        <span class="sf-warn">Kondisi: {{ $conditionLabels[$f->condition] ?? ucfirst(str_replace('_', ' ', $f->condition)) }}</span>
+                    @endif
+
+                    <div class="sf-foot">
+                        @if($isAdmin)
+                            <a href="/facilities/{{ $f->id }}/edit" class="sf-edit">Ubah</a>
+                            <form method="POST" action="/facilities/{{ $f->id }}" style="flex:1;margin:0;"
+                                  data-confirm="Yakin ingin menghapus fasilitas &quot;{{ $f->name }}&quot;? Tindakan ini tidak dapat dibatalkan.">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="sf-del">Hapus</button>
+                            </form>
+                        @elseif($canBorrow)
+                            @if($borrowable)
+                                <a href="/borrowings/create?facility={{ $f->id }}" class="sf-btn">Pinjam</a>
+                            @else
+                                <span class="sf-off">Belum bisa dipinjam</span>
+                            @endif
+                        @endif
+                    </div>
                 </div>
             </article>
 
         @empty
-
-            <div class="facility-empty">
-                <div class="facility-empty-icon">▧</div>
-                <h4>Belum Ada Fasilitas</h4>
-                <p>Data fasilitas kampus belum tersedia di dalam sistem.</p>
+            <div class="sf-empty">
+                <h4>Belum ada fasilitas</h4>
+                <p>Data fasilitas kampus belum tersedia.</p>
             </div>
-
         @endforelse
 
-        <div class="facility-empty" id="facilityNoResults" style="display:none;">
-            <div class="facility-empty-icon">⌕</div>
-            <h4>Fasilitas Tidak Ditemukan</h4>
-            <p>Coba gunakan kata kunci atau filter status yang berbeda.</p>
+        <div class="sf-empty" id="sfNone" style="display:none;">
+            <h4>Tidak ada yang cocok</h4>
+            <p>Coba kata kunci lain atau ubah filter.</p>
+            <button type="button" class="sf-reset" id="sfReset">Reset filter</button>
         </div>
+    </section>
 
-    </div>
-
-    {{-- PAGINATION --}}
     @if($items->hasPages())
-        <div class="facility-pagination">
-            {{ $items->links() }}
-        </div>
+        <div>{{ $items->links() }}</div>
     @endif
 
 </div>
@@ -828,47 +283,61 @@
 <script>
 // Konfirmasi sebelum menghapus fasilitas
 document.addEventListener('submit', function (event) {
-    const message = event.target.dataset ? event.target.dataset.confirm : null;
+    var message = event.target.dataset ? event.target.dataset.confirm : null;
     if (message && !window.confirm(message)) {
         event.preventDefault();
     }
 });
 
 document.addEventListener('DOMContentLoaded', function () {
-    const searchInput = document.getElementById('facilitySearch');
-    const statusFilter = document.getElementById('facilityStatusFilter');
-    const cards = document.querySelectorAll('.facility-item');
-    const noResults = document.getElementById('facilityNoResults');
+    var search = document.getElementById('sfSearch');
+    var cards = document.querySelectorAll('.sf-card');
+    var none = document.getElementById('sfNone');
+    var count = document.getElementById('sfCount');
+    var state = { status: '', cat: '' };
 
-    function filterFacilities() {
-        const keyword = searchInput.value.toLowerCase().trim();
-        const selectedStatus = statusFilter.value;
+    function apply() {
+        var q = search.value.toLowerCase().trim();
+        var shown = 0;
 
-        let visibleCount = 0;
-
-        cards.forEach(card => {
-            const searchData = card.dataset.search || '';
-            const status = card.dataset.status || '';
-
-            const matchesKeyword = searchData.includes(keyword);
-            const matchesStatus = !selectedStatus || status === selectedStatus;
-
-            if (matchesKeyword && matchesStatus) {
-                card.style.display = '';
-                visibleCount++;
-            } else {
-                card.style.display = 'none';
-            }
+        cards.forEach(function (c) {
+            var ok = (c.dataset.search || '').includes(q)
+                && (!state.status || c.dataset.status === state.status)
+                && (!state.cat || c.dataset.cat === state.cat);
+            c.style.display = ok ? '' : 'none';
+            if (ok) shown++;
         });
 
-        if (noResults) {
-            noResults.style.display =
-                cards.length > 0 && visibleCount === 0 ? 'block' : 'none';
-        }
+        count.textContent = shown + ' fasilitas';
+        if (none) none.style.display = cards.length > 0 && shown === 0 ? '' : 'none';
     }
 
-    searchInput.addEventListener('input', filterFacilities);
-    statusFilter.addEventListener('change', filterFacilities);
+    function bindChips(wrapId, key, attr) {
+        var wrap = document.getElementById(wrapId);
+        if (!wrap) return;
+        wrap.addEventListener('click', function (e) {
+            var btn = e.target.closest('.sf-chip-btn');
+            if (!btn) return;
+            wrap.querySelectorAll('.sf-chip-btn').forEach(function (b) { b.classList.remove('on'); });
+            btn.classList.add('on');
+            state[key] = btn.dataset[attr] || '';
+            apply();
+        });
+    }
+
+    bindChips('sfStatusChips', 'status', 'status');
+    bindChips('sfCatChips', 'cat', 'cat');
+    search.addEventListener('input', apply);
+
+    var reset = document.getElementById('sfReset');
+    if (reset) reset.addEventListener('click', function () {
+        search.value = '';
+        state = { status: '', cat: '' };
+        document.querySelectorAll('.sf-chips').forEach(function (w) {
+            w.querySelectorAll('.sf-chip-btn').forEach(function (b, i) { b.classList.toggle('on', i === 0); });
+        });
+        apply();
+    });
 });
 </script>
 
