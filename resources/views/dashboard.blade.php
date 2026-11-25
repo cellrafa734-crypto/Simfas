@@ -1,4 +1,3 @@
-﻿
 @extends('layouts.app')
 
 @section('title', 'Dashboard')
@@ -8,14 +7,40 @@
 @php
     $user = auth()->user();
     $isAdmin = $user->role === 'admin';
+    $isPetugas = $user->role === 'petugas';
+
+    // Ikon SVG inline (layout tidak memuat Bootstrap Icons, jadi tidak perlu library baru)
+    $iconPaths = [
+        'building'  => '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/>',
+        'check'     => '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+        'tools'     => '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+        'clock'     => '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+        'clipboard' => '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/>',
+        'file'      => '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"/>',
+        'arrow-up'  => '<path d="M7 17 17 7M7 7h10v10"/>',
+        'grid'      => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
+        'activity'  => '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+        'arrow-right' => '<path d="M5 12h14M12 5l7 7-7 7"/>',
+        'inbox'     => '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+        'info'      => '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+        'bars'      => '<path d="M12 20V10M18 20V4M6 20v-4"/>',
+        'pie'       => '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+    ];
+    $icon = fn (string $name) => new \Illuminate\Support\HtmlString(
+        '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . ($iconPaths[$name] ?? $iconPaths['bars']) . '</svg>'
+    );
+
+    // Apakah grafik punya data? (bila semua nol, tampilkan keterangan kosong)
+    $hasBorrowingData = collect($monthlyBorrowings)->sum() > 0;
+    $hasFacilityData  = collect($facilityStatusValues)->sum() > 0;
 
     $statStyles = [
-        'Total fasilitas' => ['icon' => 'bi-building', 'color' => 'blue'],
-        'Tersedia' => ['icon' => 'bi-check-circle', 'color' => 'green'],
-        'Dalam pemeliharaan' => ['icon' => 'bi-tools', 'color' => 'orange'],
-        'Menunggu persetujuan' => ['icon' => 'bi-clock-history', 'color' => 'purple'],
-        'Total pengajuan' => ['icon' => 'bi-clipboard-data', 'color' => 'navy'],
-        'Pengajuan saya' => ['icon' => 'bi-file-earmark-text', 'color' => 'blue'],
+        'Total fasilitas' => ['icon' => 'building', 'color' => 'blue'],
+        'Tersedia' => ['icon' => 'check', 'color' => 'green'],
+        'Dalam pemeliharaan' => ['icon' => 'tools', 'color' => 'orange'],
+        'Menunggu persetujuan' => ['icon' => 'clock', 'color' => 'purple'],
+        'Total pengajuan' => ['icon' => 'clipboard', 'color' => 'navy'],
+        'Pengajuan saya' => ['icon' => 'file', 'color' => 'blue'],
     ];
 @endphp
 
@@ -24,6 +49,18 @@
 
     .dashboard-page {
         color: #10244a;
+    }
+
+    .ico {
+        width: 1em;
+        height: 1em;
+        flex: none;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.9;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        vertical-align: -.125em;
     }
 
     .welcome-panel {
@@ -281,11 +318,47 @@
         color: #8a9ab2;
     }
 
-    .empty-state i {
+    .empty-state .ico {
         display: block;
-        margin-bottom: 10px;
+        margin: 0 auto 10px;
         font-size: 2rem;
         color: #b8c8df;
+    }
+
+    .chart-empty {
+        height: 275px;
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 1px dashed #d3deee;
+        border-radius: 12px;
+        background: #fafcff;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .petugas-note {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+    }
+
+    .petugas-note .note-text {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        min-width: 0;
+        flex: 1 1 260px;
+    }
+
+    .petugas-note .note-text .ico { margin-top: 3px; font-size: 1.1rem; }
+
+    .table-dashboard {
+        min-width: 480px;
     }
 
     .dashboard-link {
@@ -305,6 +378,13 @@
         .stat-card { padding: 16px; }
         .stat-value { font-size: 1.7rem; }
         .dashboard-panel { padding: 16px; }
+        .chart-container, .chart-empty { height: 240px; }
+    }
+
+    /* Tabel dashboard: lebih ringkas di layar kecil (menimpa aturan umum layout) */
+    @media (max-width: 767.98px) {
+        .dashboard-page .table-dashboard { min-width: 480px; }
+        .dashboard-page .table-dashboard tbody td { min-width: 0; }
     }
 </style>
 
@@ -314,7 +394,7 @@
     <section class="welcome-panel">
         <div class="welcome-content">
             <div class="welcome-label">
-                <i class="bi bi-grid-1x2-fill"></i>
+                {!! $icon('grid') !!}
                 SIMFAS KAMPUS
             </div>
 
@@ -333,7 +413,7 @@
             </p>
         </div>
 
-        <i class="bi bi-buildings welcome-decoration"></i>
+        <span class="welcome-decoration" aria-hidden="true">{!! $icon('building') !!}</span>
     </section>
 
     {{-- STATISTIK --}}
@@ -343,7 +423,7 @@
             <p class="section-caption">Informasi terkini sistem fasilitas kampus</p>
         </div>
         <span class="badge rounded-pill text-bg-light border">
-            <i class="bi bi-activity text-primary me-1"></i>
+            <span class="text-primary me-1">{!! $icon('activity') !!}</span>
             Ringkasan
         </span>
     </div>
@@ -352,7 +432,7 @@
         @foreach($stats as $label => $value)
             @php
                 $style = $statStyles[$label] ?? [
-                    'icon' => 'bi-bar-chart',
+                    'icon' => 'bars',
                     'color' => 'blue'
                 ];
             @endphp
@@ -361,9 +441,9 @@
                 <div class="stat-card">
                     <div class="stat-top">
                         <div class="stat-icon {{ $style['color'] }}">
-                            <i class="bi {{ $style['icon'] }}"></i>
+                            {!! $icon($style['icon']) !!}
                         </div>
-                        <i class="bi bi-arrow-up-right text-secondary opacity-50"></i>
+                        <span class="text-secondary opacity-50">{!! $icon('arrow-up') !!}</span>
                     </div>
 
                     <div class="stat-value">{{ number_format($value) }}</div>
@@ -390,9 +470,17 @@
                 <h6 class="panel-title">Statistik Peminjaman</h6>
                 <p class="panel-subtitle">Jumlah pengajuan berdasarkan bulan tahun ini</p>
 
-                <div class="chart-container">
-                    <canvas id="borrowingChart"></canvas>
-                </div>
+                @if($hasBorrowingData)
+                    <div class="chart-container">
+                        <canvas id="borrowingChart"></canvas>
+                    </div>
+                @else
+                    <div class="chart-empty empty-state">
+                        {!! $icon('bars') !!}
+                        <div class="fw-semibold">Belum ada data peminjaman tahun ini</div>
+                        <small>Grafik akan muncul setelah ada pengajuan peminjaman.</small>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -401,9 +489,17 @@
                 <h6 class="panel-title">Status Fasilitas</h6>
                 <p class="panel-subtitle">Distribusi kondisi fasilitas kampus</p>
 
-                <div class="chart-container">
-                    <canvas id="facilityChart"></canvas>
-                </div>
+                @if($hasFacilityData)
+                    <div class="chart-container">
+                        <canvas id="facilityChart"></canvas>
+                    </div>
+                @else
+                    <div class="chart-empty empty-state">
+                        {!! $icon('pie') !!}
+                        <div class="fw-semibold">Belum ada data fasilitas</div>
+                        <small>Grafik akan muncul setelah fasilitas ditambahkan.</small>
+                    </div>
+                @endif
             </div>
         </div>
 
@@ -423,9 +519,11 @@
                 </p>
             </div>
 
-            <a href="/borrowings" class="dashboard-link">
-                Lihat semua <i class="bi bi-arrow-right ms-1"></i>
-            </a>
+            @unless($isPetugas)
+                <a href="/borrowings" class="dashboard-link">
+                    Lihat semua <span class="ms-1">{!! $icon('arrow-right') !!}</span>
+                </a>
+            @endunless
         </div>
 
         @if($recentBorrowings->count())
@@ -481,7 +579,7 @@
 
                                 <td>
                                     <span class="status-pill {{ $statusClass }}">
-                                        <i class="bi bi-circle-fill" style="font-size:6px"></i>
+                                        <span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>
                                         {{ ucfirst($status) }}
                                     </span>
                                 </td>
@@ -492,17 +590,20 @@
             </div>
         @else
             <div class="empty-state">
-                <i class="bi bi-inbox"></i>
+                {!! $icon('inbox') !!}
                 <div class="fw-semibold">Belum ada aktivitas peminjaman</div>
                 <small>Data pengajuan akan muncul di sini.</small>
             </div>
         @endif
     </div>
 
-    @if($user->role === 'petugas')
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle me-2"></i>
-            Modul tugas pemeliharaan petugas belum diimplementasikan pada versi ini.
+    @if($isPetugas)
+        <div class="alert alert-info petugas-note" role="status">
+            <div class="note-text">
+                {!! $icon('info') !!}
+                <span>Anda dapat melihat daftar dan kondisi fasilitas pada menu Fasilitas.</span>
+            </div>
+            <a href="/facilities" class="btn btn-primary btn-sm">Buka Daftar Fasilitas</a>
         </div>
     @endif
 
