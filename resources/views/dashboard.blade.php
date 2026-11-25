@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('title', 'Dashboard')
@@ -9,214 +10,227 @@
     $isAdmin = $user->role === 'admin';
     $isPetugas = $user->role === 'petugas';
 
-    // Ikon SVG inline (layout tidak memuat Bootstrap Icons, jadi tidak perlu library baru)
-    $iconPaths = [
-        'building'  => '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/>',
-        'check'     => '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
-        'tools'     => '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
-        'clock'     => '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
-        'clipboard' => '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4M12 16h4M8 11h.01M8 16h.01"/>',
-        'file'      => '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M10 9H8M16 13H8M16 17H8"/>',
-        'arrow-up'  => '<path d="M7 17 17 7M7 7h10v10"/>',
-        'grid'      => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
-        'activity'  => '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
-        'arrow-right' => '<path d="M5 12h14M12 5l7 7-7 7"/>',
-        'inbox'     => '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
-        'info'      => '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
-        'bars'      => '<path d="M12 20V10M18 20V4M6 20v-4"/>',
-        'pie'       => '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
-    ];
-    $icon = fn (string $name) => new \Illuminate\Support\HtmlString(
-        '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . ($iconPaths[$name] ?? $iconPaths['bars']) . '</svg>'
-    );
-
-    // Apakah grafik punya data? (bila semua nol, tampilkan keterangan kosong)
     $hasBorrowingData = collect($monthlyBorrowings)->sum() > 0;
-    $hasFacilityData  = collect($facilityStatusValues)->sum() > 0;
+    $hasFacilityData = collect($facilityStatusValues)->sum() > 0;
 
-    $statStyles = [
-        'Total fasilitas' => ['icon' => 'building', 'color' => 'blue'],
-        'Tersedia' => ['icon' => 'check', 'color' => 'green'],
-        'Dalam pemeliharaan' => ['icon' => 'tools', 'color' => 'orange'],
-        'Menunggu persetujuan' => ['icon' => 'clock', 'color' => 'purple'],
-        'Total pengajuan' => ['icon' => 'clipboard', 'color' => 'navy'],
-        'Pengajuan saya' => ['icon' => 'file', 'color' => 'blue'],
+    $statConfig = [
+        'Total fasilitas' => ['icon' => '▦', 'color' => 'blue'],
+        'Tersedia' => ['icon' => '✓', 'color' => 'green'],
+        'Dalam pemeliharaan' => ['icon' => '⚙', 'color' => 'orange'],
+        'Menunggu persetujuan' => ['icon' => '◷', 'color' => 'purple'],
+        'Total pengajuan' => ['icon' => '▤', 'color' => 'navy'],
+        'Pengajuan saya' => ['icon' => '▣', 'color' => 'blue'],
     ];
 @endphp
 
 <style>
-    .dashboard-page {
-        --dash-primary: #368bd0;
-        --dash-navy: #183e60;
-        --dash-muted: #8295a8;
-        --dash-line: #e8eef4;
-        --dash-bg: #f5f9fc;
-        color: var(--dash-navy);
-        padding-bottom: 24px;
+    .sim-dashboard {
+        --primary: #368bd0;
+        --primary-dark: #236da9;
+        --navy: #183e60;
+        --sky: #eaf5ff;
+        --pale: #f4f9fd;
+        --text: #435b70;
+        --muted: #8ba0b3;
+        --line: #e4edf5;
+        color: var(--navy);
+        padding-bottom: 35px;
     }
 
-    .dashboard-page .ico {
-        width: 1.1em;
-        height: 1.1em;
-        flex: none;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.9;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        vertical-align: middle;
+    .sim-dashboard * { box-sizing: border-box; }
+
+    .sim-dashboard .dash-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 24px;
     }
 
-    /* HERO */
+    .dash-heading h1 {
+        margin: 0;
+        color: var(--navy);
+        font-size: clamp(1.45rem, 3vw, 2rem);
+        font-weight: 800;
+        letter-spacing: -.7px;
+    }
+
+    .dash-heading p {
+        margin: 7px 0 0;
+        color: var(--muted);
+        font-size: .86rem;
+    }
+
+    .dash-date {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 11px 15px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: white;
+        color: var(--text);
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
     .dash-hero {
         position: relative;
         overflow: hidden;
-        padding: 34px 36px;
-        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 205px;
+        padding: 32px 36px;
+        margin-bottom: 28px;
         border-radius: 22px;
-        color: #fff;
-        background: linear-gradient(115deg, #183e60 0%, #236da9 58%, #368bd0 100%);
-        box-shadow: 0 14px 35px rgba(35, 109, 169, .16);
+        color: white;
+        background: linear-gradient(115deg, #183e60 0%, #236da9 55%, #55a5e2 100%);
+        box-shadow: 0 15px 35px rgba(35,109,169,.16);
     }
 
     .dash-hero::before,
     .dash-hero::after {
         content: "";
         position: absolute;
-        border: 1px solid rgba(255,255,255,.13);
+        border: 1px solid rgba(255,255,255,.15);
         border-radius: 50%;
         pointer-events: none;
     }
 
     .dash-hero::before {
-        width: 310px;
-        height: 310px;
-        right: 8%;
+        width: 300px;
+        height: 300px;
+        right: 9%;
         top: -205px;
     }
 
     .dash-hero::after {
-        width: 250px;
-        height: 250px;
-        right: -75px;
-        bottom: -175px;
+        width: 230px;
+        height: 230px;
+        right: -65px;
+        bottom: -165px;
     }
 
     .dash-hero-content {
         position: relative;
         z-index: 2;
-        max-width: 680px;
+        max-width: 650px;
     }
 
-    .dash-eyebrow {
+    .dash-hero-tag {
         display: inline-flex;
         align-items: center;
         gap: 8px;
         padding: 7px 12px;
         margin-bottom: 17px;
-        border: 1px solid rgba(255,255,255,.2);
+        border: 1px solid rgba(255,255,255,.22);
         border-radius: 30px;
-        background: rgba(255,255,255,.1);
+        background: rgba(255,255,255,.12);
         color: #eaf5ff;
-        font-size: .7rem;
+        font-size: .68rem;
         font-weight: 800;
-        letter-spacing: .11em;
+        letter-spacing: 1.2px;
     }
 
     .dash-hero h2 {
         margin: 0 0 10px;
-        color: #fff !important;
-        font-size: clamp(1.5rem, 3vw, 2.15rem);
+        color: white !important;
+        font-size: clamp(1.45rem, 3vw, 2rem);
         font-weight: 800;
-        letter-spacing: -.045em;
+        letter-spacing: -.7px;
     }
 
     .dash-hero p {
-        max-width: 560px;
+        max-width: 520px;
         margin: 0;
-        color: rgba(255,255,255,.78);
-        font-size: .88rem;
+        color: rgba(255,255,255,.8);
+        font-size: .86rem;
         line-height: 1.8;
     }
 
     .dash-hero-art {
-        position: absolute;
-        right: 7%;
-        top: 50%;
-        transform: translateY(-50%);
-        color: rgba(255,255,255,.13);
-        font-size: 7rem;
+        position: relative;
+        z-index: 1;
+        display: grid;
+        place-items: center;
+        width: 115px;
+        height: 115px;
+        margin-right: 30px;
+        border: 1px solid rgba(255,255,255,.2);
+        border-radius: 30px;
+        background: rgba(255,255,255,.12);
+        color: white;
+        font-size: 4rem;
+        transform: rotate(-7deg);
     }
 
-    /* SECTION HEADING */
-    .dash-section-heading {
+    .dash-section-title {
         display: flex;
-        align-items: flex-end;
         justify-content: space-between;
-        gap: 14px;
+        align-items: flex-end;
+        gap: 12px;
         margin: 30px 0 16px;
     }
 
-    .dash-section-heading h5 {
+    .dash-section-title h5 {
         margin: 0;
-        color: var(--dash-navy);
+        color: var(--navy);
         font-size: 1.02rem;
         font-weight: 800;
-        letter-spacing: -.025em;
     }
 
-    .dash-section-heading p {
+    .dash-section-title p {
         margin: 5px 0 0;
-        color: var(--dash-muted);
-        font-size: .77rem;
+        color: var(--muted);
+        font-size: .76rem;
     }
 
-    .dash-period {
+    .dash-label {
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        padding: 7px 11px;
-        border: 1px solid var(--dash-line);
+        padding: 7px 12px;
         border-radius: 30px;
-        background: #fff;
-        color: #647d91;
+        background: var(--sky);
+        color: var(--primary-dark);
         font-size: .7rem;
-        font-weight: 700;
-        white-space: nowrap;
+        font-weight: 800;
     }
 
-    /* STAT CARDS */
-    .dash-stat-card {
+    .dash-stat {
         position: relative;
         height: 100%;
-        min-height: 158px;
+        min-height: 155px;
         overflow: hidden;
         padding: 21px;
-        border: 1px solid var(--dash-line);
-        border-radius: 18px;
-        background: #fff;
-        box-shadow: 0 3px 14px rgba(24,62,96,.035);
+        border: 1px solid var(--line);
+        border-radius: 17px;
+        background: white;
+        box-shadow: 0 4px 18px rgba(24,62,96,.035);
         transition: transform .25s ease, box-shadow .25s ease;
     }
 
-    .dash-stat-card:hover {
+    .dash-stat:hover {
         transform: translateY(-4px);
         box-shadow: 0 13px 28px rgba(24,62,96,.09);
     }
 
     .dash-stat-top {
         display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
     }
 
     .dash-stat-icon {
         display: grid;
         place-items: center;
-        width: 45px;
-        height: 45px;
-        border-radius: 14px;
+        width: 43px;
+        height: 43px;
+        border-radius: 13px;
         font-size: 1.25rem;
+        font-weight: 800;
     }
 
     .dash-stat-icon.blue { color: #368bd0; background: #eaf5ff; }
@@ -225,151 +239,116 @@
     .dash-stat-icon.purple { color: #8166c5; background: #f3efff; }
     .dash-stat-icon.navy { color: #183e60; background: #edf3f8; }
 
-    .dash-stat-decoration {
-        color: #dce6ee;
-        font-size: 1rem;
+    .dash-stat-mark {
+        color: #c8d9e7;
+        font-size: 1.1rem;
     }
 
-    .dash-stat-value {
+    .dash-stat-number {
         margin-top: 20px;
-        color: var(--dash-navy);
+        color: var(--navy);
         font-size: 2rem;
         font-weight: 800;
         line-height: 1;
-        letter-spacing: -.055em;
+        letter-spacing: -1px;
     }
 
-    .dash-stat-label {
+    .dash-stat-name {
         margin-top: 9px;
-        color: #8092a4;
+        color: #8095a8;
         font-size: .77rem;
         font-weight: 600;
     }
 
-    .dash-stat-line {
+    .dash-stat-bar {
         position: absolute;
-        right: 0;
         bottom: 0;
         left: 0;
+        width: 100%;
         height: 3px;
-        background: #368bd0;
+        background: var(--primary);
     }
 
-    .dash-stat-line.green { background: #15966a; }
-    .dash-stat-line.orange { background: #e6a13c; }
-    .dash-stat-line.purple { background: #8166c5; }
-    .dash-stat-line.navy { background: #183e60; }
+    .dash-stat-bar.green { background: #15966a; }
+    .dash-stat-bar.orange { background: #e6a13c; }
+    .dash-stat-bar.purple { background: #8166c5; }
+    .dash-stat-bar.navy { background: #183e60; }
 
-    /* PANELS */
     .dash-panel {
         height: 100%;
         padding: 23px;
-        border: 1px solid var(--dash-line);
+        border: 1px solid var(--line);
         border-radius: 18px;
-        background: #fff;
-        box-shadow: 0 3px 14px rgba(24,62,96,.035);
+        background: white;
+        box-shadow: 0 4px 18px rgba(24,62,96,.035);
     }
 
-    .dash-panel-heading {
+    .dash-panel-head {
         display: flex;
-        align-items: flex-start;
         justify-content: space-between;
+        align-items: flex-start;
         gap: 12px;
     }
 
-    .dash-panel-title {
+    .dash-panel-head h6 {
         margin: 0;
-        color: var(--dash-navy);
+        color: var(--navy);
         font-size: .92rem;
         font-weight: 800;
     }
 
-    .dash-panel-subtitle {
+    .dash-panel-head p {
         margin: 6px 0 0;
-        color: var(--dash-muted);
-        font-size: .74rem;
+        color: var(--muted);
+        font-size: .73rem;
     }
 
     .dash-panel-icon {
         display: grid;
         place-items: center;
-        width: 36px;
-        height: 36px;
-        border-radius: 11px;
-        background: #edf6fd;
-        color: var(--dash-primary);
+        width: 37px;
+        height: 37px;
+        border-radius: 12px;
+        background: var(--sky);
+        color: var(--primary);
+        font-size: 1.1rem;
     }
 
     .dash-chart {
         position: relative;
         width: 100%;
-        height: 270px;
-        margin-top: 22px;
+        height: 265px;
+        margin-top: 20px;
     }
 
-    .dash-chart-empty {
+    .dash-empty-chart {
         display: flex;
-        height: 270px;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 9px;
-        margin-top: 22px;
+        height: 265px;
+        margin-top: 20px;
         padding: 20px;
         border: 1px dashed #d9e5ee;
         border-radius: 14px;
         background: #fafcfe;
         text-align: center;
-        color: #8ca0b1;
+        color: var(--muted);
     }
 
-    .dash-chart-empty .ico {
-        font-size: 2rem;
-        color: #b5c9d9;
+    .dash-empty-chart strong {
+        margin: 10px 0 5px;
+        color: var(--text);
+        font-size: .85rem;
     }
 
-    .dash-chart-empty strong {
-        color: #617d92;
-        font-size: .83rem;
-    }
-
-    .dash-chart-empty small {
-        font-size: .72rem;
-    }
-
-    /* ACTIVITY */
     .dash-activity {
-        margin-top: 30px;
-    }
-
-    .dash-activity-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 14px;
-        margin-bottom: 20px;
-    }
-
-    .dash-view-all {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        color: var(--dash-primary);
-        font-size: .77rem;
-        font-weight: 800;
-        text-decoration: none;
-        transition: gap .2s ease;
-    }
-
-    .dash-view-all:hover {
-        gap: 11px;
-        color: var(--dash-navy);
+        margin-top: 28px;
     }
 
     .dash-table-wrap {
         overflow-x: auto;
-        border: 1px solid var(--dash-line);
+        border: 1px solid var(--line);
         border-radius: 13px;
     }
 
@@ -383,14 +362,14 @@
 
     .dash-table th {
         padding: 14px 15px;
-        background: #f6f9fc;
-        color: #8295a8;
+        background: #f3f8fc;
+        color: #8196a9;
         font-size: .67rem;
         font-weight: 800;
-        letter-spacing: .07em;
+        letter-spacing: .7px;
         text-transform: uppercase;
         white-space: nowrap;
-        border-bottom: 1px solid var(--dash-line);
+        border-bottom: 1px solid var(--line);
     }
 
     .dash-table td {
@@ -401,41 +380,27 @@
         vertical-align: middle;
     }
 
-    .dash-table tbody tr:last-child td {
-        border-bottom: 0;
-    }
-
-    .dash-table tbody tr {
-        transition: background .2s ease;
-    }
-
-    .dash-table tbody tr:hover {
-        background: #f8fbfe;
-    }
-
-    .dash-number {
-        color: #a0afbd;
-        font-weight: 700;
-    }
+    .dash-table tbody tr:last-child td { border-bottom: 0; }
+    .dash-table tbody tr:hover { background: #f8fbfe; }
 
     .dash-person {
         display: flex;
         align-items: center;
         gap: 10px;
-        color: var(--dash-navy);
+        color: var(--navy);
         font-weight: 700;
     }
 
-    .dash-person-avatar {
+    .dash-avatar {
         display: grid;
         place-items: center;
-        width: 32px;
-        height: 32px;
+        width: 33px;
+        height: 33px;
         flex: none;
-        border-radius: 10px;
-        background: #eaf5ff;
-        color: #368bd0;
-        font-size: .72rem;
+        border-radius: 11px;
+        background: var(--sky);
+        color: var(--primary-dark);
+        font-size: .73rem;
         font-weight: 800;
     }
 
@@ -465,33 +430,37 @@
     .dash-status.selesai { color: #65788a; background: #eff3f6; }
     .dash-status.default { color: #65788a; background: #eff3f6; }
 
-    .dash-empty {
-        display: flex;
-        flex-direction: column;
+    .dash-view-all {
+        display: inline-flex;
         align-items: center;
-        justify-content: center;
-        padding: 45px 15px;
-        text-align: center;
-        color: #91a3b3;
+        gap: 7px;
+        color: var(--primary-dark);
+        font-size: .76rem;
+        font-weight: 800;
+        text-decoration: none;
     }
 
-    .dash-empty .ico {
-        margin-bottom: 12px;
-        color: #b6c9d8;
-        font-size: 2.2rem;
+    .dash-view-all:hover { color: var(--navy); }
+
+    .dash-empty {
+        padding: 45px 15px;
+        text-align: center;
+        color: var(--muted);
+    }
+
+    .dash-empty .empty-icon {
+        display: block;
+        margin-bottom: 10px;
+        color: #b5c9d9;
+        font-size: 2rem;
     }
 
     .dash-empty strong {
-        color: #607c91;
+        display: block;
+        color: var(--text);
         font-size: .85rem;
     }
 
-    .dash-empty small {
-        margin-top: 5px;
-        font-size: .73rem;
-    }
-
-    /* PETUGAS */
     .dash-petugas-note {
         display: flex;
         align-items: center;
@@ -504,67 +473,62 @@
         border-radius: 15px;
         background: #f0f8fe;
         color: #426b89;
-    }
-
-    .dash-petugas-note .note-text {
-        display: flex;
-        align-items: center;
-        gap: 11px;
         font-size: .8rem;
-    }
-
-    .dash-petugas-note .note-text .ico {
-        color: #368bd0;
-        font-size: 1.2rem;
     }
 
     .dash-petugas-note a {
         padding: 8px 14px;
         border-radius: 9px;
-        background: #368bd0;
-        color: #fff;
+        background: var(--primary);
+        color: white;
         font-size: .73rem;
         font-weight: 700;
         text-decoration: none;
     }
 
     .dash-petugas-note a:hover {
-        background: #236da9;
-        color: #fff;
+        background: var(--primary-dark);
+        color: white;
     }
 
     @media (max-width: 767.98px) {
-        .dash-hero { padding: 27px 23px; }
-        .dash-hero-art { right: 12px; font-size: 4.5rem; opacity: .6; }
-        .dash-stat-card { min-height: 145px; padding: 17px; }
-        .dash-stat-value { font-size: 1.7rem; }
+        .dash-hero { padding: 26px 22px; }
+        .dash-hero-art { width: 75px; height: 75px; margin-right: 0; font-size: 2.6rem; }
+        .dash-stat { min-height: 140px; padding: 17px; }
+        .dash-stat-number { font-size: 1.7rem; }
         .dash-panel { padding: 18px; }
-        .dash-chart, .dash-chart-empty { height: 240px; }
-        .dash-section-heading { align-items: flex-start; }
+        .dash-chart, .dash-empty-chart { height: 235px; }
+        .dash-date { font-size: .7rem; }
     }
 
-    @media (max-width: 420px) {
-        .dash-period { font-size: .63rem; }
-        .dash-hero h2 { font-size: 1.45rem; }
-        .dash-stat-label { font-size: .7rem; }
+    @media (max-width: 480px) {
+        .dash-hero-art { display: none; }
+        .dash-heading { align-items: flex-start; }
+        .dash-stat-name { font-size: .7rem; }
+        .dash-section-title { align-items: flex-start; }
     }
 </style>
 
-<div class="dashboard-page">
+<div class="sim-dashboard">
 
-    {{-- HERO --}}
+    <div class="dash-heading">
+        <div>
+            <h1>Dashboard</h1>
+            <p>Ringkasan informasi dan aktivitas SIMFAS Kampus.</p>
+        </div>
+        <div class="dash-date">
+            <span>▦</span>
+            {{ now('Asia/Jakarta')->locale('id')->translatedFormat('l, d F Y') }}
+        </div>
+    </div>
+
     <section class="dash-hero">
         <div class="dash-hero-content">
-            <div class="dash-eyebrow">
-                {!! $icon('grid') !!}
-                SIMFAS KAMPUS
-            </div>
-
+            <div class="dash-hero-tag">✦ SIMFAS KAMPUS</div>
             <h2>Selamat datang, {{ $user->name }}!</h2>
-
             <p>
                 @if($isAdmin)
-                    Kelola dan pantau fasilitas kampus, pengajuan peminjaman,
+                    Pantau dan kelola fasilitas kampus, pengajuan peminjaman,
                     serta aktivitas sistem melalui satu dashboard.
                 @elseif($isPetugas)
                     Pantau informasi fasilitas kampus dan aktivitas peminjaman
@@ -575,68 +539,54 @@
                 @endif
             </p>
         </div>
-
-        <div class="dash-hero-art" aria-hidden="true">
-            {!! $icon('building') !!}
-        </div>
+        <div class="dash-hero-art" aria-hidden="true">▦</div>
     </section>
 
-    {{-- STATISTIK --}}
-    <div class="dash-section-heading">
+    <div class="dash-section-title">
         <div>
             <h5>Ringkasan Statistik</h5>
-            <p>Ikhtisar data fasilitas dan peminjaman</p>
+            <p>Data fasilitas dan peminjaman yang tercatat dalam sistem.</p>
         </div>
-        <span class="dash-period">
-            {!! $icon('activity') !!}
-            Data sistem
-        </span>
+        <span class="dash-label">● Data sistem</span>
     </div>
 
     <div class="row g-3">
         @foreach($stats as $label => $value)
             @php
-                $style = $statStyles[$label] ?? ['icon' => 'bars', 'color' => 'blue'];
+                $config = $statConfig[$label] ?? ['icon' => '▤', 'color' => 'blue'];
             @endphp
-
             <div class="col-6 col-xl-4">
-                <article class="dash-stat-card">
+                <article class="dash-stat">
                     <div class="dash-stat-top">
-                        <div class="dash-stat-icon {{ $style['color'] }}">
-                            {!! $icon($style['icon']) !!}
+                        <div class="dash-stat-icon {{ $config['color'] }}">
+                            {{ $config['icon'] }}
                         </div>
-                        <span class="dash-stat-decoration">
-                            {!! $icon('arrow-up') !!}
-                        </span>
+                        <span class="dash-stat-mark">↗</span>
                     </div>
-
-                    <div class="dash-stat-value">{{ number_format($value) }}</div>
-                    <div class="dash-stat-label">{{ $label }}</div>
-                    <div class="dash-stat-line {{ $style['color'] }}"></div>
+                    <div class="dash-stat-number">{{ number_format($value) }}</div>
+                    <div class="dash-stat-name">{{ $label }}</div>
+                    <div class="dash-stat-bar {{ $config['color'] }}"></div>
                 </article>
             </div>
         @endforeach
     </div>
 
-    {{-- GRAFIK --}}
-    <div class="dash-section-heading">
+    <div class="dash-section-title">
         <div>
             <h5>Analisis Aktivitas</h5>
-            <p>Visualisasi peminjaman dan kondisi fasilitas kampus</p>
+            <p>Visualisasi tren peminjaman dan kondisi fasilitas kampus.</p>
         </div>
     </div>
 
     <div class="row g-3">
         <div class="col-12 col-xl-7">
             <section class="dash-panel">
-                <div class="dash-panel-heading">
+                <div class="dash-panel-head">
                     <div>
-                        <h6 class="dash-panel-title">Tren Peminjaman</h6>
-                        <p class="dash-panel-subtitle">
-                            Jumlah pengajuan berdasarkan bulan tahun {{ now()->year }}
-                        </p>
+                        <h6>Tren Peminjaman</h6>
+                        <p>Jumlah pengajuan per bulan pada tahun {{ now()->year }}.</p>
                     </div>
-                    <span class="dash-panel-icon">{!! $icon('activity') !!}</span>
+                    <span class="dash-panel-icon">⌁</span>
                 </div>
 
                 @if($hasBorrowingData)
@@ -644,8 +594,8 @@
                         <canvas id="borrowingChart"></canvas>
                     </div>
                 @else
-                    <div class="dash-chart-empty">
-                        {!! $icon('bars') !!}
+                    <div class="dash-empty-chart">
+                        <span style="font-size:2rem;">⌁</span>
                         <strong>Belum ada aktivitas peminjaman</strong>
                         <small>Grafik akan menampilkan data setelah terdapat pengajuan.</small>
                     </div>
@@ -655,12 +605,12 @@
 
         <div class="col-12 col-xl-5">
             <section class="dash-panel">
-                <div class="dash-panel-heading">
+                <div class="dash-panel-head">
                     <div>
-                        <h6 class="dash-panel-title">Distribusi Fasilitas</h6>
-                        <p class="dash-panel-subtitle">Berdasarkan status fasilitas</p>
+                        <h6>Distribusi Fasilitas</h6>
+                        <p>Komposisi berdasarkan status fasilitas.</p>
                     </div>
-                    <span class="dash-panel-icon">{!! $icon('pie') !!}</span>
+                    <span class="dash-panel-icon">◉</span>
                 </div>
 
                 @if($hasFacilityData)
@@ -668,33 +618,32 @@
                         <canvas id="facilityChart"></canvas>
                     </div>
                 @else
-                    <div class="dash-chart-empty">
-                        {!! $icon('pie') !!}
+                    <div class="dash-empty-chart">
+                        <span style="font-size:2rem;">◉</span>
                         <strong>Belum ada data fasilitas</strong>
-                        <small>Distribusi akan muncul setelah fasilitas tersedia.</small>
+                        <small>Distribusi akan muncul setelah data fasilitas tersedia.</small>
                     </div>
                 @endif
             </section>
         </div>
     </div>
 
-    {{-- AKTIVITAS TERBARU --}}
     <section class="dash-panel dash-activity">
-        <div class="dash-activity-header">
+        <div class="dash-panel-head" style="margin-bottom:20px;">
             <div>
-                <h6 class="dash-panel-title">Aktivitas Peminjaman Terbaru</h6>
-                <p class="dash-panel-subtitle">
+                <h6>Aktivitas Peminjaman Terbaru</h6>
+                <p>
                     @if($isAdmin)
-                        Pengajuan terbaru dari seluruh pengguna
+                        Pengajuan terbaru dari seluruh pengguna.
                     @else
-                        Riwayat pengajuan peminjaman milikmu
+                        Riwayat pengajuan peminjaman milikmu.
                     @endif
                 </p>
             </div>
 
             @unless($isPetugas)
                 <a href="{{ route('borrowings.index') }}" class="dash-view-all">
-                    Lihat semua {!! $icon('arrow-right') !!}
+                    Lihat semua →
                 </a>
             @endunless
         </div>
@@ -738,23 +687,26 @@
                                 ][$status] ?? ucfirst(str_replace('_', ' ', $status));
 
                                 $personName = $borrowing->user->name ?? 'Pengguna';
-                                $personInitial = mb_strtoupper(mb_substr($personName, 0, 1));
                             @endphp
 
                             <tr>
-                                <td><span class="dash-number">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</span></td>
+                                <td style="color:#9aabba;font-weight:700;">
+                                    {{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}
+                                </td>
 
                                 @if($isAdmin)
                                     <td>
                                         <div class="dash-person">
-                                            <span class="dash-person-avatar">{{ $personInitial }}</span>
+                                            <span class="dash-avatar">
+                                                {{ mb_strtoupper(mb_substr($personName, 0, 1)) }}
+                                            </span>
                                             {{ $personName }}
                                         </div>
                                     </td>
                                 @endif
 
                                 <td>
-                                    <strong style="color:#31546f;font-weight:700;">
+                                    <strong style="color:#31546f;">
                                         {{ $borrowing->facility->name ?? $borrowing->facility->nama ?? 'Fasilitas' }}
                                     </strong>
                                 </td>
@@ -775,7 +727,7 @@
             </div>
         @else
             <div class="dash-empty">
-                {!! $icon('inbox') !!}
+                <span class="empty-icon">▤</span>
                 <strong>Belum ada aktivitas peminjaman</strong>
                 <small>Data pengajuan akan ditampilkan di bagian ini.</small>
             </div>
@@ -784,22 +736,16 @@
 
     @if($isPetugas)
         <div class="dash-petugas-note">
-            <div class="note-text">
-                {!! $icon('info') !!}
-                <span>Anda dapat melihat daftar dan kondisi fasilitas melalui menu Fasilitas.</span>
-            </div>
-            <a href="{{ route('facilities.index') }}">Buka Daftar Fasilitas</a>
+            <span>ⓘ Anda dapat melihat daftar dan kondisi fasilitas melalui menu Fasilitas.</span>
+            <a href="{{ route('facilities.index') }}">Buka Daftar Fasilitas →</a>
         </div>
     @endif
 
 </div>
 
-{{-- CHART JS --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-
     const borrowingCanvas = document.getElementById('borrowingChart');
     const facilityCanvas = document.getElementById('facilityChart');
 
@@ -813,16 +759,16 @@ document.addEventListener('DOMContentLoaded', function () {
             data: {
                 labels: @json($monthlyLabels),
                 datasets: [{
-                    label: 'Jumlah Peminjaman',
+                    label: 'Jumlah Pengajuan',
                     data: @json($monthlyBorrowings),
                     borderColor: '#368bd0',
-                    backgroundColor: 'rgba(54, 139, 208, 0.12)',
+                    backgroundColor: 'rgba(54,139,208,.13)',
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.4,
+                    tension: .42,
                     pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#ffffff',
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: '#fff',
                     pointBorderColor: '#368bd0',
                     pointBorderWidth: 2
                 }]
@@ -830,17 +776,33 @@ document.addEventListener('DOMContentLoaded', function () {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index'
+                },
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#183e60',
+                        padding: 12,
+                        cornerRadius: 9
+                    }
                 },
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: { precision: 0, font: chartFont },
-                        grid: { color: '#edf1f7' }
+                        ticks: {
+                            precision: 0,
+                            font: chartFont,
+                            color: '#8ba0b3'
+                        },
+                        grid: { color: '#edf2f7' }
                     },
                     x: {
-                        ticks: { font: chartFont },
+                        ticks: {
+                            font: chartFont,
+                            color: '#8ba0b3'
+                        },
                         grid: { display: false }
                     }
                 }
@@ -858,35 +820,41 @@ document.addEventListener('DOMContentLoaded', function () {
                     backgroundColor: [
                         '#368bd0',
                         '#78b5e8',
-                        '#f59e0b',
-                        '#ef4444'
+                        '#f2b65d',
+                        '#e77b7b'
                     ],
-                    borderWidth: 3,
+                    borderWidth: 4,
                     borderColor: '#ffffff',
-                    hoverOffset: 7
+                    hoverOffset: 8
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '68%',
+                cutout: '70%',
                 plugins: {
                     legend: {
                         position: 'bottom',
                         labels: {
                             usePointStyle: true,
-                            padding: 17,
+                            pointStyle: 'circle',
+                            padding: 18,
                             font: {
                                 family: 'Inter, sans-serif',
                                 size: 11
-                            }
+                            },
+                            color: '#637c90'
                         }
+                    },
+                    tooltip: {
+                        backgroundColor: '#183e60',
+                        padding: 12,
+                        cornerRadius: 9
                     }
                 }
             }
         });
     }
-
 });
 </script>
 
