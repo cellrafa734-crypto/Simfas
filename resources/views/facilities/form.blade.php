@@ -1,7 +1,42 @@
-
 @extends('layouts.app')
 
 @section('content')
+
+@php
+    // Nama field dalam Bahasa Indonesia + penerjemah pesan error validasi
+    // (project belum punya folder lang/id, jadi pesan bawaan Laravel masih berbahasa Inggris).
+    $fieldLabels = [
+        'code'        => 'Kode inventaris',
+        'name'        => 'Nama fasilitas',
+        'category'    => 'Kategori',
+        'location'    => 'Lokasi',
+        'units'       => 'Jumlah unit',
+        'status'      => 'Status fasilitas',
+        'condition'   => 'Kondisi fasilitas',
+        'description' => 'Deskripsi',
+        'image'       => 'Foto',
+    ];
+
+    $errId = function (string $field, ?string $message) use ($fieldLabels): string {
+        $label = $fieldLabels[$field] ?? 'Isian ini';
+        $m = strtolower((string) $message);
+        $max = preg_match('/(\d+) characters/', $m, $found) ? $found[1] : null;
+
+        return match (true) {
+            str_contains($m, 'required')           => "$label wajib diisi.",
+            str_contains($m, 'already been taken') => "$label sudah dipakai. Gunakan yang lain.",
+            str_contains($m, 'kilobytes')          => 'Ukuran foto maksimal 4 MB.',
+            $max !== null                          => "$label maksimal $max karakter.",
+            str_contains($m, 'at least')           => "$label minimal 1.",
+            str_contains($m, 'integer')            => "$label harus berupa angka bulat.",
+            str_contains($m, 'invalid')            => "Pilihan $label tidak valid.",
+            str_contains($m, 'must be an image'),
+            str_contains($m, 'file of type')       => 'Foto harus berformat JPG, JPEG, PNG, atau WEBP.',
+            str_contains($m, 'failed to upload')   => 'Foto gagal diunggah. Coba foto dengan ukuran lebih kecil.',
+            default                                => (string) $message,
+        };
+    };
+@endphp
 
 <style>
     .facility-page {
@@ -150,6 +185,23 @@
         align-items: center;
     }
 
+    /* Zona upload adalah elemen label; tanpa baris ini aturan ".facility-field label" membuatnya display:block */
+    .facility-field label.upload-zone {
+        display: flex;
+        margin-bottom: 0;
+        font-weight: 400;
+    }
+
+    .facility-control.is-invalid,
+    .upload-zone.is-invalid {
+        border-color: #d84b5c;
+        background: #fff8f8;
+    }
+
+    .facility-control.is-invalid:focus {
+        box-shadow: 0 0 0 4px rgba(216,75,92,.14);
+    }
+
     .upload-zone:hover,
     .upload-zone.dragover {
         border-color: #278fe0;
@@ -216,6 +268,8 @@
 
     .btn-save-facility,
     .btn-cancel-facility {
+        font-family: inherit;
+        text-align: center;
         border-radius: 11px;
         padding: 12px 23px;
         font-size: 14px;
@@ -345,9 +399,9 @@
         </div>
 
         @if ($errors->any())
-            <div class="validation-summary">
+            <div class="validation-summary" role="alert">
                 <strong>Periksa kembali formulir:</strong>
-                Terdapat data yang belum sesuai.
+                Ada {{ count($errors->keys()) }} isian yang belum sesuai (ditandai merah di bawah).
             </div>
         @endif
 
@@ -371,47 +425,50 @@
                 <div class="facility-column">
 
                     <div class="facility-field">
-                        <label>Kode inventaris <span>*</span></label>
+                        <label for="field-code">Kode inventaris <span>*</span></label>
                         <input
-                            class="facility-control"
+                            id="field-code"
+                            @class(['facility-control', 'is-invalid' => $errors->has('code')])
                             name="code"
                             value="{{ old('code', $f->code) }}"
                             placeholder="Contoh: INV-001"
                             maxlength="30"
                             required
                         >
-                        @error('code') <small class="field-error">{{ $message }}</small> @enderror
+                        @error('code') <small class="field-error" role="alert">{{ $errId('code', $message) }}</small> @enderror
                     </div>
 
                     <div class="facility-field">
-                        <label>Kategori <span>*</span></label>
+                        <label for="field-category">Kategori <span>*</span></label>
                         <input
-                            class="facility-control"
+                            id="field-category"
+                            @class(['facility-control', 'is-invalid' => $errors->has('category')])
                             name="category"
                             value="{{ old('category', $f->category) }}"
                             placeholder="Contoh: Elektronik"
                             maxlength="60"
                             required
                         >
-                        @error('category') <small class="field-error">{{ $message }}</small> @enderror
+                        @error('category') <small class="field-error" role="alert">{{ $errId('category', $message) }}</small> @enderror
                     </div>
 
                     <div class="facility-field">
-                        <label>Jumlah unit <span>*</span></label>
+                        <label for="field-units">Jumlah unit <span>*</span></label>
                         <input
-                            class="facility-control"
+                            id="field-units"
+                            @class(['facility-control', 'is-invalid' => $errors->has('units')])
                             type="number"
                             name="units"
                             value="{{ old('units', $f->units ?? 1) }}"
                             min="1"
                             required
                         >
-                        @error('units') <small class="field-error">{{ $message }}</small> @enderror
+                        @error('units') <small class="field-error" role="alert">{{ $errId('units', $message) }}</small> @enderror
                     </div>
 
                     <div class="facility-field">
-                        <label>Kondisi fasilitas <span>*</span></label>
-                        <select class="facility-control" name="condition" required>
+                        <label for="field-condition">Kondisi fasilitas <span>*</span></label>
+                        <select id="field-condition" @class(['facility-control', 'is-invalid' => $errors->has('condition')]) name="condition" required>
                             @foreach([
                                 'baik' => 'Baik',
                                 'rusak_ringan' => 'Rusak ringan',
@@ -426,7 +483,7 @@
                                 </option>
                             @endforeach
                         </select>
-                        @error('condition') <small class="field-error">{{ $message }}</small> @enderror
+                        @error('condition') <small class="field-error" role="alert">{{ $errId('condition', $message) }}</small> @enderror
                     </div>
 
                 </div>
@@ -435,34 +492,36 @@
                 <div class="facility-column">
 
                     <div class="facility-field">
-                        <label>Nama fasilitas <span>*</span></label>
+                        <label for="field-name">Nama fasilitas <span>*</span></label>
                         <input
-                            class="facility-control"
+                            id="field-name"
+                            @class(['facility-control', 'is-invalid' => $errors->has('name')])
                             name="name"
                             value="{{ old('name', $f->name) }}"
                             placeholder="Contoh: Proyektor Epson"
                             maxlength="150"
                             required
                         >
-                        @error('name') <small class="field-error">{{ $message }}</small> @enderror
+                        @error('name') <small class="field-error" role="alert">{{ $errId('name', $message) }}</small> @enderror
                     </div>
 
                     <div class="facility-field">
-                        <label>Lokasi <span>*</span></label>
+                        <label for="field-location">Lokasi <span>*</span></label>
                         <input
-                            class="facility-control"
+                            id="field-location"
+                            @class(['facility-control', 'is-invalid' => $errors->has('location')])
                             name="location"
                             value="{{ old('location', $f->location) }}"
                             placeholder="Contoh: Laboratorium Komputer"
                             maxlength="150"
                             required
                         >
-                        @error('location') <small class="field-error">{{ $message }}</small> @enderror
+                        @error('location') <small class="field-error" role="alert">{{ $errId('location', $message) }}</small> @enderror
                     </div>
 
                     <div class="facility-field">
-                        <label>Status fasilitas <span>*</span></label>
-                        <select class="facility-control" name="status" required>
+                        <label for="field-status">Status fasilitas <span>*</span></label>
+                        <select id="field-status" @class(['facility-control', 'is-invalid' => $errors->has('status')]) name="status" required>
                             @foreach([
                                 'tersedia' => 'Tersedia',
                                 'dipinjam' => 'Dipinjam',
@@ -477,14 +536,14 @@
                                 </option>
                             @endforeach
                         </select>
-                        @error('status') <small class="field-error">{{ $message }}</small> @enderror
+                        @error('status') <small class="field-error" role="alert">{{ $errId('status', $message) }}</small> @enderror
                     </div>
 
                     {{-- UPLOAD FOTO --}}
                     <div class="facility-field">
-                        <label>Foto fasilitas <small style="color:#91a4b7">(Opsional)</small></label>
+                        <span style="display:block;font-size:13px;font-weight:700;margin-bottom:8px;color:#38546e">Foto fasilitas <small style="color:#91a4b7;font-weight:400">(Opsional)</small></span>
 
-                        <label class="upload-zone" id="uploadZone" for="facilityImage">
+                        <label @class(['upload-zone', 'is-invalid' => $errors->has('image')]) id="uploadZone" for="facilityImage">
                             <div class="upload-icon">📷</div>
                             <strong>Klik atau tarik foto ke sini</strong>
                             <small>JPG, JPEG, PNG, WEBP · Maksimal 4 MB</small>
@@ -503,19 +562,20 @@
                                 @if($f->image_path)
                                     src="{{ asset('storage/'.$f->image_path) }}"
                                     style="display:block"
+                                    onerror="this.style.display='none';document.getElementById('uploadFilename').textContent='Foto saat ini tidak dapat ditampilkan. Pastikan sudah menjalankan: php artisan storage:link';"
                                 @endif
                             >
 
                             <span class="upload-filename" id="uploadFilename">
                                 @if($f->image_path)
-                                    Foto fasilitas saat ini
+                                    Foto fasilitas saat ini (pilih foto baru untuk menggantinya)
                                 @else
                                     Belum ada foto dipilih
                                 @endif
                             </span>
                         </label>
 
-                        @error('image') <small class="field-error">{{ $message }}</small> @enderror
+                        @error('image') <small class="field-error" role="alert">{{ $errId('image', $message) }}</small> @enderror
                     </div>
 
                 </div>
@@ -524,13 +584,14 @@
             {{-- DESKRIPSI --}}
             <div class="description-section">
                 <div class="facility-field">
-                    <label>Deskripsi fasilitas</label>
+                    <label for="field-description">Deskripsi fasilitas</label>
                     <textarea
-                        class="facility-control"
+                        id="field-description"
+                        @class(['facility-control', 'is-invalid' => $errors->has('description')])
                         name="description"
                         placeholder="Tuliskan keterangan tambahan mengenai fasilitas..."
                     >{{ old('description', $f->description) }}</textarea>
-                    @error('description') <small class="field-error">{{ $message }}</small> @enderror
+                    @error('description') <small class="field-error" role="alert">{{ $errId('description', $message) }}</small> @enderror
                 </div>
             </div>
 
