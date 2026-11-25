@@ -45,474 +45,647 @@
 @endphp
 
 <style>
-    /* DASHBOARD SIMFAS */
-
     .dashboard-page {
-        color: #10244a;
+        --dash-primary: #368bd0;
+        --dash-navy: #183e60;
+        --dash-muted: #8295a8;
+        --dash-line: #e8eef4;
+        --dash-bg: #f5f9fc;
+        color: var(--dash-navy);
+        padding-bottom: 24px;
     }
 
-    .ico {
-        width: 1em;
-        height: 1em;
+    .dashboard-page .ico {
+        width: 1.1em;
+        height: 1.1em;
         flex: none;
         fill: none;
         stroke: currentColor;
         stroke-width: 1.9;
         stroke-linecap: round;
         stroke-linejoin: round;
-        vertical-align: -.125em;
+        vertical-align: middle;
     }
 
-    .welcome-panel {
+    /* HERO */
+    .dash-hero {
         position: relative;
         overflow: hidden;
-        padding: 30px 32px;
-        margin-bottom: 25px;
-        border-radius: 18px;
-        color: white;
-        background: linear-gradient(115deg, #0a1f44 0%, #123b79 65%, #2563eb 100%);
-        box-shadow: 0 12px 28px rgba(10, 31, 68, .16);
+        padding: 34px 36px;
+        margin-bottom: 30px;
+        border-radius: 22px;
+        color: #fff;
+        background: linear-gradient(115deg, #183e60 0%, #236da9 58%, #368bd0 100%);
+        box-shadow: 0 14px 35px rgba(35, 109, 169, .16);
     }
 
-    .welcome-panel::before,
-    .welcome-panel::after {
+    .dash-hero::before,
+    .dash-hero::after {
         content: "";
         position: absolute;
+        border: 1px solid rgba(255,255,255,.13);
         border-radius: 50%;
-        background: rgba(255,255,255,.07);
         pointer-events: none;
     }
 
-    .welcome-panel::before {
-        width: 240px;
-        height: 240px;
+    .dash-hero::before {
+        width: 310px;
+        height: 310px;
         right: 8%;
-        top: -145px;
+        top: -205px;
     }
 
-    .welcome-panel::after {
-        width: 180px;
-        height: 180px;
-        right: -35px;
-        bottom: -115px;
+    .dash-hero::after {
+        width: 250px;
+        height: 250px;
+        right: -75px;
+        bottom: -175px;
     }
 
-    .welcome-content {
+    .dash-hero-content {
         position: relative;
-        z-index: 1;
+        z-index: 2;
+        max-width: 680px;
     }
 
-    .welcome-label {
+    .dash-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        margin-bottom: 17px;
+        border: 1px solid rgba(255,255,255,.2);
+        border-radius: 30px;
+        background: rgba(255,255,255,.1);
+        color: #eaf5ff;
+        font-size: .7rem;
+        font-weight: 800;
+        letter-spacing: .11em;
+    }
+
+    .dash-hero h2 {
+        margin: 0 0 10px;
+        color: #fff !important;
+        font-size: clamp(1.5rem, 3vw, 2.15rem);
+        font-weight: 800;
+        letter-spacing: -.045em;
+    }
+
+    .dash-hero p {
+        max-width: 560px;
+        margin: 0;
+        color: rgba(255,255,255,.78);
+        font-size: .88rem;
+        line-height: 1.8;
+    }
+
+    .dash-hero-art {
+        position: absolute;
+        right: 7%;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255,255,255,.13);
+        font-size: 7rem;
+    }
+
+    /* SECTION HEADING */
+    .dash-section-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 14px;
+        margin: 30px 0 16px;
+    }
+
+    .dash-section-heading h5 {
+        margin: 0;
+        color: var(--dash-navy);
+        font-size: 1.02rem;
+        font-weight: 800;
+        letter-spacing: -.025em;
+    }
+
+    .dash-section-heading p {
+        margin: 5px 0 0;
+        color: var(--dash-muted);
+        font-size: .77rem;
+    }
+
+    .dash-period {
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        padding: 6px 11px;
-        margin-bottom: 13px;
-        border: 1px solid rgba(255,255,255,.2);
+        padding: 7px 11px;
+        border: 1px solid var(--dash-line);
         border-radius: 30px;
-        background: rgba(255,255,255,.10);
-        color: #dbeafe;
-        font-size: .72rem;
-        font-weight: 700;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-    }
-
-    .welcome-title {
-        margin: 0 0 8px;
-        color: #fff !important;
-        font-size: clamp(1.35rem, 3vw, 1.9rem);
-        font-weight: 800;
-        letter-spacing: -.035em;
-    }
-
-    .welcome-description {
-        max-width: 580px;
-        margin: 0;
-        color: rgba(255,255,255,.76);
-        font-size: .9rem;
-        line-height: 1.7;
-    }
-
-    .welcome-decoration {
-        position: absolute;
-        right: 45px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: rgba(255,255,255,.15);
-        font-size: 6rem;
-    }
-
-    /* STATISTIK */
-
-    .section-heading {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 15px;
-    }
-
-    .section-heading h5 {
-        margin: 0;
-        color: #0a1f44;
-        font-size: 1rem;
-        font-weight: 800;
-    }
-
-    .section-caption {
-        margin: 4px 0 0;
-        color: #7b8ba5;
-        font-size: .78rem;
-    }
-
-    .stat-card {
-        position: relative;
-        height: 100%;
-        overflow: hidden;
-        padding: 19px;
-        border: 1px solid #e2e9f4;
-        border-radius: 16px;
         background: #fff;
-        box-shadow: 0 3px 12px rgba(10,31,68,.035);
-        transition: transform .25s ease, box-shadow .25s ease;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 25px rgba(10,31,68,.09);
-    }
-
-    .stat-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-    }
-
-    .stat-icon {
-        display: grid;
-        place-items: center;
-        width: 43px;
-        height: 43px;
-        border-radius: 12px;
-        font-size: 1.2rem;
-    }
-
-    .stat-icon.blue { color: #2563eb; background: #eff6ff; }
-    .stat-icon.green { color: #15945b; background: #eafaf2; }
-    .stat-icon.orange { color: #d97706; background: #fff7e8; }
-    .stat-icon.purple { color: #7c3aed; background: #f4efff; }
-    .stat-icon.navy { color: #0e2a5c; background: #eaf0fa; }
-
-    .stat-value {
-        margin-top: 17px;
-        color: #0a1f44;
-        font-size: 2rem;
-        font-weight: 800;
-        line-height: 1;
-        letter-spacing: -.04em;
-    }
-
-    .stat-label {
-        margin-top: 8px;
-        color: #71829e;
-        font-size: .8rem;
-        font-weight: 600;
-    }
-
-    .stat-indicator {
-        position: absolute;
-        right: 0;
-        bottom: 0;
-        width: 65px;
-        height: 4px;
-        border-radius: 5px 0 0 0;
-        background: #2563eb;
-    }
-
-    .stat-indicator.green { background: #16a36a; }
-    .stat-indicator.orange { background: #f59e0b; }
-    .stat-indicator.purple { background: #8b5cf6; }
-    .stat-indicator.navy { background: #0e2a5c; }
-
-    /* PANEL */
-
-    .dashboard-panel {
-        height: 100%;
-        padding: 21px;
-        border: 1px solid #e2e9f4;
-        border-radius: 16px;
-        background: #fff;
-        box-shadow: 0 3px 12px rgba(10,31,68,.035);
-    }
-
-    .panel-title {
-        margin: 0;
-        color: #0a1f44;
-        font-size: .95rem;
-        font-weight: 800;
-    }
-
-    .panel-subtitle {
-        margin-top: 5px;
-        color: #8291a9;
-        font-size: .76rem;
-    }
-
-    .chart-container {
-        position: relative;
-        width: 100%;
-        height: 275px;
-        margin-top: 20px;
-    }
-
-    .table-dashboard {
-        margin-top: 18px;
-    }
-
-    .table-dashboard th {
-        padding: 13px 12px !important;
-        background: #f5f8fd !important;
-        color: #71829e !important;
-        font-size: .68rem !important;
-        letter-spacing: .06em;
-        text-transform: uppercase;
-    }
-
-    .table-dashboard td {
-        padding: 14px 12px !important;
-        font-size: .8rem;
-    }
-
-    .table-dashboard tbody tr:hover {
-        background: #f5f8ff;
-    }
-
-    .person-name {
-        color: #18345e;
-        font-weight: 700;
-    }
-
-    .status-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 5px 10px;
-        border-radius: 30px;
-        font-size: .68rem;
+        color: #647d91;
+        font-size: .7rem;
         font-weight: 700;
         white-space: nowrap;
     }
 
-    .status-menunggu { color: #a16207; background: #fef3c7; }
-    .status-disetujui { color: #166534; background: #dcfce7; }
-    .status-ditolak { color: #991b1b; background: #fee2e2; }
-    .status-dipinjam { color: #1d4ed8; background: #dbeafe; }
-    .status-selesai { color: #475569; background: #e2e8f0; }
-    .status-default { color: #475569; background: #f1f5f9; }
-
-    .empty-state {
-        padding: 35px 15px;
-        text-align: center;
-        color: #8a9ab2;
+    /* STAT CARDS */
+    .dash-stat-card {
+        position: relative;
+        height: 100%;
+        min-height: 158px;
+        overflow: hidden;
+        padding: 21px;
+        border: 1px solid var(--dash-line);
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 3px 14px rgba(24,62,96,.035);
+        transition: transform .25s ease, box-shadow .25s ease;
     }
 
-    .empty-state .ico {
-        display: block;
-        margin: 0 auto 10px;
-        font-size: 2rem;
-        color: #b8c8df;
+    .dash-stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 13px 28px rgba(24,62,96,.09);
     }
 
-    .chart-empty {
-        height: 275px;
-        margin-top: 20px;
+    .dash-stat-top {
         display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .dash-stat-icon {
+        display: grid;
+        place-items: center;
+        width: 45px;
+        height: 45px;
+        border-radius: 14px;
+        font-size: 1.25rem;
+    }
+
+    .dash-stat-icon.blue { color: #368bd0; background: #eaf5ff; }
+    .dash-stat-icon.green { color: #15966a; background: #eaf8f1; }
+    .dash-stat-icon.orange { color: #d58a25; background: #fff5e8; }
+    .dash-stat-icon.purple { color: #8166c5; background: #f3efff; }
+    .dash-stat-icon.navy { color: #183e60; background: #edf3f8; }
+
+    .dash-stat-decoration {
+        color: #dce6ee;
+        font-size: 1rem;
+    }
+
+    .dash-stat-value {
+        margin-top: 20px;
+        color: var(--dash-navy);
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -.055em;
+    }
+
+    .dash-stat-label {
+        margin-top: 9px;
+        color: #8092a4;
+        font-size: .77rem;
+        font-weight: 600;
+    }
+
+    .dash-stat-line {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: #368bd0;
+    }
+
+    .dash-stat-line.green { background: #15966a; }
+    .dash-stat-line.orange { background: #e6a13c; }
+    .dash-stat-line.purple { background: #8166c5; }
+    .dash-stat-line.navy { background: #183e60; }
+
+    /* PANELS */
+    .dash-panel {
+        height: 100%;
+        padding: 23px;
+        border: 1px solid var(--dash-line);
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 3px 14px rgba(24,62,96,.035);
+    }
+
+    .dash-panel-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .dash-panel-title {
+        margin: 0;
+        color: var(--dash-navy);
+        font-size: .92rem;
+        font-weight: 800;
+    }
+
+    .dash-panel-subtitle {
+        margin: 6px 0 0;
+        color: var(--dash-muted);
+        font-size: .74rem;
+    }
+
+    .dash-panel-icon {
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 11px;
+        background: #edf6fd;
+        color: var(--dash-primary);
+    }
+
+    .dash-chart {
+        position: relative;
+        width: 100%;
+        height: 270px;
+        margin-top: 22px;
+    }
+
+    .dash-chart-empty {
+        display: flex;
+        height: 270px;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border: 1px dashed #d3deee;
-        border-radius: 12px;
-        background: #fafcff;
-        text-align: center;
+        gap: 9px;
+        margin-top: 22px;
         padding: 20px;
+        border: 1px dashed #d9e5ee;
+        border-radius: 14px;
+        background: #fafcfe;
+        text-align: center;
+        color: #8ca0b1;
     }
 
-    .petugas-note {
+    .dash-chart-empty .ico {
+        font-size: 2rem;
+        color: #b5c9d9;
+    }
+
+    .dash-chart-empty strong {
+        color: #617d92;
+        font-size: .83rem;
+    }
+
+    .dash-chart-empty small {
+        font-size: .72rem;
+    }
+
+    /* ACTIVITY */
+    .dash-activity {
+        margin-top: 30px;
+    }
+
+    .dash-activity-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 14px;
+        margin-bottom: 20px;
     }
 
-    .petugas-note .note-text {
+    .dash-view-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--dash-primary);
+        font-size: .77rem;
+        font-weight: 800;
+        text-decoration: none;
+        transition: gap .2s ease;
+    }
+
+    .dash-view-all:hover {
+        gap: 11px;
+        color: var(--dash-navy);
+    }
+
+    .dash-table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--dash-line);
+        border-radius: 13px;
+    }
+
+    .dash-table {
+        width: 100%;
+        min-width: 560px;
+        margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .dash-table th {
+        padding: 14px 15px;
+        background: #f6f9fc;
+        color: #8295a8;
+        font-size: .67rem;
+        font-weight: 800;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        border-bottom: 1px solid var(--dash-line);
+    }
+
+    .dash-table td {
+        padding: 15px;
+        color: #637c90;
+        font-size: .77rem;
+        border-bottom: 1px solid #edf1f5;
+        vertical-align: middle;
+    }
+
+    .dash-table tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .dash-table tbody tr {
+        transition: background .2s ease;
+    }
+
+    .dash-table tbody tr:hover {
+        background: #f8fbfe;
+    }
+
+    .dash-number {
+        color: #a0afbd;
+        font-weight: 700;
+    }
+
+    .dash-person {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 10px;
-        min-width: 0;
-        flex: 1 1 260px;
+        color: var(--dash-navy);
+        font-weight: 700;
     }
 
-    .petugas-note .note-text .ico { margin-top: 3px; font-size: 1.1rem; }
-
-    .table-dashboard {
-        min-width: 480px;
+    .dash-person-avatar {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        flex: none;
+        border-radius: 10px;
+        background: #eaf5ff;
+        color: #368bd0;
+        font-size: .72rem;
+        font-weight: 800;
     }
 
-    .dashboard-link {
-        color: #2563eb;
-        font-size: .78rem;
+    .dash-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 10px;
+        border-radius: 30px;
+        font-size: .67rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .dash-status::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .dash-status.menunggu { color: #a16a13; background: #fff5df; }
+    .dash-status.disetujui { color: #19815a; background: #eaf8f1; }
+    .dash-status.ditolak { color: #c34c4c; background: #fff0ef; }
+    .dash-status.dipinjam { color: #2679b5; background: #eaf5ff; }
+    .dash-status.selesai { color: #65788a; background: #eff3f6; }
+    .dash-status.default { color: #65788a; background: #eff3f6; }
+
+    .dash-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 45px 15px;
+        text-align: center;
+        color: #91a3b3;
+    }
+
+    .dash-empty .ico {
+        margin-bottom: 12px;
+        color: #b6c9d8;
+        font-size: 2.2rem;
+    }
+
+    .dash-empty strong {
+        color: #607c91;
+        font-size: .85rem;
+    }
+
+    .dash-empty small {
+        margin-top: 5px;
+        font-size: .73rem;
+    }
+
+    /* PETUGAS */
+    .dash-petugas-note {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-top: 22px;
+        padding: 17px 20px;
+        border: 1px solid #d9eaf7;
+        border-radius: 15px;
+        background: #f0f8fe;
+        color: #426b89;
+    }
+
+    .dash-petugas-note .note-text {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        font-size: .8rem;
+    }
+
+    .dash-petugas-note .note-text .ico {
+        color: #368bd0;
+        font-size: 1.2rem;
+    }
+
+    .dash-petugas-note a {
+        padding: 8px 14px;
+        border-radius: 9px;
+        background: #368bd0;
+        color: #fff;
+        font-size: .73rem;
         font-weight: 700;
         text-decoration: none;
     }
 
-    .dashboard-link:hover {
-        color: #0a1f44;
+    .dash-petugas-note a:hover {
+        background: #236da9;
+        color: #fff;
     }
 
-    @media (max-width: 575px) {
-        .welcome-panel { padding: 24px 21px; }
-        .welcome-decoration { right: 10px; font-size: 4rem; opacity: .5; }
-        .stat-card { padding: 16px; }
-        .stat-value { font-size: 1.7rem; }
-        .dashboard-panel { padding: 16px; }
-        .chart-container, .chart-empty { height: 240px; }
-    }
-
-    /* Tabel dashboard: lebih ringkas di layar kecil (menimpa aturan umum layout) */
     @media (max-width: 767.98px) {
-        .dashboard-page .table-dashboard { min-width: 480px; }
-        .dashboard-page .table-dashboard tbody td { min-width: 0; }
+        .dash-hero { padding: 27px 23px; }
+        .dash-hero-art { right: 12px; font-size: 4.5rem; opacity: .6; }
+        .dash-stat-card { min-height: 145px; padding: 17px; }
+        .dash-stat-value { font-size: 1.7rem; }
+        .dash-panel { padding: 18px; }
+        .dash-chart, .dash-chart-empty { height: 240px; }
+        .dash-section-heading { align-items: flex-start; }
+    }
+
+    @media (max-width: 420px) {
+        .dash-period { font-size: .63rem; }
+        .dash-hero h2 { font-size: 1.45rem; }
+        .dash-stat-label { font-size: .7rem; }
     }
 </style>
 
 <div class="dashboard-page">
 
-    {{-- SAMBUTAN --}}
-    <section class="welcome-panel">
-        <div class="welcome-content">
-            <div class="welcome-label">
+    {{-- HERO --}}
+    <section class="dash-hero">
+        <div class="dash-hero-content">
+            <div class="dash-eyebrow">
                 {!! $icon('grid') !!}
                 SIMFAS KAMPUS
             </div>
 
-            <h2 class="welcome-title">
-                Selamat datang, {{ $user->name }}!
-            </h2>
+            <h2>Selamat datang, {{ $user->name }}!</h2>
 
-            <p class="welcome-description">
+            <p>
                 @if($isAdmin)
-                    Selamat bekerja. Pantau pengelolaan fasilitas,
-                    pengajuan peminjaman, dan aktivitas sistem kampus
+                    Kelola dan pantau fasilitas kampus, pengajuan peminjaman,
+                    serta aktivitas sistem melalui satu dashboard.
+                @elseif($isPetugas)
+                    Pantau informasi fasilitas kampus dan aktivitas peminjaman
+                    melalui dashboard SIMFAS.
                 @else
-                    Selamat datang di Sistem Informasi Manajemen Fasilitas Kampus.
-                    Temukan fasilitas dan pantau pengajuan peminjamanmu dengan mudah.
+                    Temukan fasilitas kampus dan pantau pengajuan peminjamanmu
+                    dengan lebih mudah melalui SIMFAS.
                 @endif
             </p>
         </div>
 
-        <span class="welcome-decoration" aria-hidden="true">{!! $icon('building') !!}</span>
+        <div class="dash-hero-art" aria-hidden="true">
+            {!! $icon('building') !!}
+        </div>
     </section>
 
     {{-- STATISTIK --}}
-    <div class="section-heading">
+    <div class="dash-section-heading">
         <div>
             <h5>Ringkasan Statistik</h5>
-            <p class="section-caption">Informasi terkini sistem fasilitas kampus</p>
+            <p>Ikhtisar data fasilitas dan peminjaman</p>
         </div>
-        <span class="badge rounded-pill text-bg-light border">
-            <span class="text-primary me-1">{!! $icon('activity') !!}</span>
-            Ringkasan
+        <span class="dash-period">
+            {!! $icon('activity') !!}
+            Data sistem
         </span>
     </div>
 
-    <div class="row g-3 mb-4">
+    <div class="row g-3">
         @foreach($stats as $label => $value)
             @php
-                $style = $statStyles[$label] ?? [
-                    'icon' => 'bars',
-                    'color' => 'blue'
-                ];
+                $style = $statStyles[$label] ?? ['icon' => 'bars', 'color' => 'blue'];
             @endphp
 
             <div class="col-6 col-xl-4">
-                <div class="stat-card">
-                    <div class="stat-top">
-                        <div class="stat-icon {{ $style['color'] }}">
+                <article class="dash-stat-card">
+                    <div class="dash-stat-top">
+                        <div class="dash-stat-icon {{ $style['color'] }}">
                             {!! $icon($style['icon']) !!}
                         </div>
-                        <span class="text-secondary opacity-50">{!! $icon('arrow-up') !!}</span>
+                        <span class="dash-stat-decoration">
+                            {!! $icon('arrow-up') !!}
+                        </span>
                     </div>
 
-                    <div class="stat-value">{{ number_format($value) }}</div>
-                    <div class="stat-label">{{ $label }}</div>
-
-                    <div class="stat-indicator {{ $style['color'] }}"></div>
-                </div>
+                    <div class="dash-stat-value">{{ number_format($value) }}</div>
+                    <div class="dash-stat-label">{{ $label }}</div>
+                    <div class="dash-stat-line {{ $style['color'] }}"></div>
+                </article>
             </div>
         @endforeach
     </div>
 
     {{-- GRAFIK --}}
-    <div class="section-heading mt-4">
+    <div class="dash-section-heading">
         <div>
             <h5>Analisis Aktivitas</h5>
-            <p class="section-caption">Visualisasi data peminjaman dan fasilitas</p>
+            <p>Visualisasi peminjaman dan kondisi fasilitas kampus</p>
         </div>
     </div>
 
-    <div class="row g-3 mb-4">
-
+    <div class="row g-3">
         <div class="col-12 col-xl-7">
-            <div class="dashboard-panel">
-                <h6 class="panel-title">Statistik Peminjaman</h6>
-                <p class="panel-subtitle">Jumlah pengajuan berdasarkan bulan tahun ini</p>
+            <section class="dash-panel">
+                <div class="dash-panel-heading">
+                    <div>
+                        <h6 class="dash-panel-title">Tren Peminjaman</h6>
+                        <p class="dash-panel-subtitle">
+                            Jumlah pengajuan berdasarkan bulan tahun {{ now()->year }}
+                        </p>
+                    </div>
+                    <span class="dash-panel-icon">{!! $icon('activity') !!}</span>
+                </div>
 
                 @if($hasBorrowingData)
-                    <div class="chart-container">
+                    <div class="dash-chart">
                         <canvas id="borrowingChart"></canvas>
                     </div>
                 @else
-                    <div class="chart-empty empty-state">
+                    <div class="dash-chart-empty">
                         {!! $icon('bars') !!}
-                        <div class="fw-semibold">Belum ada data peminjaman tahun ini</div>
-                        <small>Grafik akan muncul setelah ada pengajuan peminjaman.</small>
+                        <strong>Belum ada aktivitas peminjaman</strong>
+                        <small>Grafik akan menampilkan data setelah terdapat pengajuan.</small>
                     </div>
                 @endif
-            </div>
+            </section>
         </div>
 
         <div class="col-12 col-xl-5">
-            <div class="dashboard-panel">
-                <h6 class="panel-title">Status Fasilitas</h6>
-                <p class="panel-subtitle">Distribusi kondisi fasilitas kampus</p>
+            <section class="dash-panel">
+                <div class="dash-panel-heading">
+                    <div>
+                        <h6 class="dash-panel-title">Distribusi Fasilitas</h6>
+                        <p class="dash-panel-subtitle">Berdasarkan status fasilitas</p>
+                    </div>
+                    <span class="dash-panel-icon">{!! $icon('pie') !!}</span>
+                </div>
 
                 @if($hasFacilityData)
-                    <div class="chart-container">
+                    <div class="dash-chart">
                         <canvas id="facilityChart"></canvas>
                     </div>
                 @else
-                    <div class="chart-empty empty-state">
+                    <div class="dash-chart-empty">
                         {!! $icon('pie') !!}
-                        <div class="fw-semibold">Belum ada data fasilitas</div>
-                        <small>Grafik akan muncul setelah fasilitas ditambahkan.</small>
+                        <strong>Belum ada data fasilitas</strong>
+                        <small>Distribusi akan muncul setelah fasilitas tersedia.</small>
                     </div>
                 @endif
-            </div>
+            </section>
         </div>
-
     </div>
 
     {{-- AKTIVITAS TERBARU --}}
-    <div class="dashboard-panel mb-4">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+    <section class="dash-panel dash-activity">
+        <div class="dash-activity-header">
             <div>
-                <h6 class="panel-title">Aktivitas Peminjaman Terbaru</h6>
-                <p class="panel-subtitle">
+                <h6 class="dash-panel-title">Aktivitas Peminjaman Terbaru</h6>
+                <p class="dash-panel-subtitle">
                     @if($isAdmin)
-                        Daftar pengajuan peminjaman terbaru dari pengguna
+                        Pengajuan terbaru dari seluruh pengguna
                     @else
                         Riwayat pengajuan peminjaman milikmu
                     @endif
@@ -520,15 +693,15 @@
             </div>
 
             @unless($isPetugas)
-                <a href="/borrowings" class="dashboard-link">
-                    Lihat semua <span class="ms-1">{!! $icon('arrow-right') !!}</span>
+                <a href="{{ route('borrowings.index') }}" class="dash-view-all">
+                    Lihat semua {!! $icon('arrow-right') !!}
                 </a>
             @endunless
         </div>
 
         @if($recentBorrowings->count())
-            <div class="table-responsive">
-                <table class="table table-dashboard align-middle">
+            <div class="dash-table-wrap">
+                <table class="dash-table">
                     <thead>
                         <tr>
                             <th>No.</th>
@@ -540,47 +713,59 @@
                             <th>Status</th>
                         </tr>
                     </thead>
-
                     <tbody>
                         @foreach($recentBorrowings as $index => $borrowing)
                             @php
                                 $status = strtolower((string) $borrowing->status);
 
                                 $statusClass = match($status) {
-                                    'menunggu' => 'status-menunggu',
-                                    'disetujui' => 'status-disetujui',
-                                    'ditolak' => 'status-ditolak',
-                                    'dipinjam' => 'status-dipinjam',
-                                    'selesai' => 'status-selesai',
-                                    default => 'status-default',
+                                    'menunggu' => 'menunggu',
+                                    'disetujui' => 'disetujui',
+                                    'ditolak' => 'ditolak',
+                                    'dipinjam', 'sedang_digunakan' => 'dipinjam',
+                                    'selesai' => 'selesai',
+                                    default => 'default',
                                 };
+
+                                $statusLabel = [
+                                    'menunggu' => 'Menunggu',
+                                    'disetujui' => 'Disetujui',
+                                    'ditolak' => 'Ditolak',
+                                    'dipinjam' => 'Sedang Dipinjam',
+                                    'sedang_digunakan' => 'Sedang Digunakan',
+                                    'selesai' => 'Selesai',
+                                    'dibatalkan' => 'Dibatalkan',
+                                ][$status] ?? ucfirst(str_replace('_', ' ', $status));
+
+                                $personName = $borrowing->user->name ?? 'Pengguna';
+                                $personInitial = mb_strtoupper(mb_substr($personName, 0, 1));
                             @endphp
 
                             <tr>
-                                <td class="text-secondary">{{ $index + 1 }}</td>
+                                <td><span class="dash-number">{{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}</span></td>
 
                                 @if($isAdmin)
                                     <td>
-                                        <span class="person-name">
-                                            {{ $borrowing->user->name ?? 'Pengguna' }}
-                                        </span>
+                                        <div class="dash-person">
+                                            <span class="dash-person-avatar">{{ $personInitial }}</span>
+                                            {{ $personName }}
+                                        </div>
                                     </td>
                                 @endif
 
                                 <td>
-                                    <span class="person-name">
+                                    <strong style="color:#31546f;font-weight:700;">
                                         {{ $borrowing->facility->name ?? $borrowing->facility->nama ?? 'Fasilitas' }}
-                                    </span>
-                                </td>
-
-                                <td class="text-secondary">
-                                    {{ $borrowing->created_at?->format('d/m/Y') ?? '-' }}
+                                    </strong>
                                 </td>
 
                                 <td>
-                                    <span class="status-pill {{ $statusClass }}">
-                                        <span style="width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block"></span>
-                                        {{ ucfirst($status) }}
+                                    {{ $borrowing->created_at?->format('d M Y') ?? '-' }}
+                                </td>
+
+                                <td>
+                                    <span class="dash-status {{ $statusClass }}">
+                                        {{ $statusLabel }}
                                     </span>
                                 </td>
                             </tr>
@@ -589,21 +774,21 @@
                 </table>
             </div>
         @else
-            <div class="empty-state">
+            <div class="dash-empty">
                 {!! $icon('inbox') !!}
-                <div class="fw-semibold">Belum ada aktivitas peminjaman</div>
-                <small>Data pengajuan akan muncul di sini.</small>
+                <strong>Belum ada aktivitas peminjaman</strong>
+                <small>Data pengajuan akan ditampilkan di bagian ini.</small>
             </div>
         @endif
-    </div>
+    </section>
 
     @if($isPetugas)
-        <div class="alert alert-info petugas-note" role="status">
+        <div class="dash-petugas-note">
             <div class="note-text">
                 {!! $icon('info') !!}
-                <span>Anda dapat melihat daftar dan kondisi fasilitas pada menu Fasilitas.</span>
+                <span>Anda dapat melihat daftar dan kondisi fasilitas melalui menu Fasilitas.</span>
             </div>
-            <a href="/facilities" class="btn btn-primary btn-sm">Buka Daftar Fasilitas</a>
+            <a href="{{ route('facilities.index') }}">Buka Daftar Fasilitas</a>
         </div>
     @endif
 
@@ -630,15 +815,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 datasets: [{
                     label: 'Jumlah Peminjaman',
                     data: @json($monthlyBorrowings),
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.10)',
+                    borderColor: '#368bd0',
+                    backgroundColor: 'rgba(54, 139, 208, 0.12)',
                     borderWidth: 3,
                     fill: true,
                     tension: 0.4,
                     pointRadius: 4,
                     pointHoverRadius: 6,
                     pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#2563eb',
+                    pointBorderColor: '#368bd0',
                     pointBorderWidth: 2
                 }]
             },
@@ -671,8 +856,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 datasets: [{
                     data: @json($facilityStatusValues),
                     backgroundColor: [
-                        '#2563eb',
-                        '#60a5fa',
+                        '#368bd0',
+                        '#78b5e8',
                         '#f59e0b',
                         '#ef4444'
                     ],

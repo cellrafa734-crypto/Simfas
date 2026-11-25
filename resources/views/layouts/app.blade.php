@@ -64,24 +64,24 @@
            Radius: kontainer (card, modal, tabel) = 16px | kontrol (input, tombol) = 12px
            ===================================================================== */
         :root {
-            --navy-950: #06142e;
-            --navy-900: #0a1f44;
-            --navy-800: #0e2a5c;
-            --navy-700: #143672;
+            --navy-950: #183e60;
+            --navy-900: #183e60;
+            --navy-800: #236da9;
+            --navy-700: #368bd0;
 
-            --blue-700: #1d4ed8;
-            --blue-600: #2563eb;
-            --blue-500: #3b82f6;
-            --blue-400: #60a5fa;
-            --blue-100: #dbeafe;
-            --blue-50:  #eff6ff;
+            --blue-700: #236da9;
+            --blue-600: #368bd0;
+            --blue-500: #368bd0;
+            --blue-400: #78b5e8;
+            --blue-100: #d9edfc;
+            --blue-50:  #eaf5ff;
 
-            --ink:      #10244a;
-            --ink-soft: #3d5378;
-            --muted:    #6c7f9d;
-            --line:     #e2e9f4;
+            --ink:      #183e60;
+            --ink-soft: #435b70;
+            --muted:    #7890a8;
+            --line:     #dceaf5;
             --surface:  #ffffff;
-            --bg:       #f3f6fb;
+            --bg:       #f4f9fd;
 
             --radius-lg: 16px;   /* rounded-2xl : card, modal, tabel          */
             --radius-md: 12px;   /* rounded-xl  : input, tombol, alert, menu  */
@@ -183,7 +183,7 @@
             display: flex;
             flex-direction: column;
             padding: 22px 16px max(18px, env(safe-area-inset-bottom));
-            color: #cfe0fb;
+            color: #435b70;
             background:
                 radial-gradient(120% 55% at 0% 0%, rgba(59, 130, 246, .30), transparent 60%),
                 linear-gradient(180deg, var(--navy-900) 0%, var(--navy-950) 100%);
@@ -197,7 +197,7 @@
             gap: 12px;
             padding: 2px 6px 20px;
             margin-bottom: 4px;
-            border-bottom: 1px solid rgba(255, 255, 255, .09);
+            border-bottom: 1px solid #e3edf5;
         }
 
         .brand-link {
@@ -250,7 +250,7 @@
             letter-spacing: .16em;
             white-space: nowrap;
             text-transform: uppercase;
-            color: rgba(170, 196, 238, .65);
+            color: #7890a8;
         }
 
         .sidebar-close {
@@ -261,7 +261,7 @@
             place-items: center;
             border: 0;
             border-radius: var(--radius-sm);
-            background: rgba(255, 255, 255, .08);
+            background: #eaf5ff;
             color: #fff;
             cursor: pointer;
             transition: background-color .2s;
@@ -285,7 +285,7 @@
             font-weight: 700;
             letter-spacing: .15em;
             text-transform: uppercase;
-            color: rgba(160, 186, 228, .55);
+            color: #8aa0b5;
         }
         .sidebar-brand + .sidebar-nav .nav-caption:first-child { margin-top: 18px; }
 
@@ -300,7 +300,7 @@
             border: 0;
             border-radius: var(--radius-md);
             background: transparent;
-            color: rgba(214, 227, 250, .78);
+            color: #526b82;
             font-family: inherit;
             font-size: .875rem;
             font-weight: 600;
@@ -325,7 +325,7 @@
 
         .side-link:hover {
             color: #fff;
-            background: rgba(255, 255, 255, .08);
+            background: #eaf5ff;
             transform: translateX(3px);
         }
         .side-link:hover .nav-icon { transform: scale(1.12); }
@@ -334,7 +334,7 @@
         .side-link.active,
         .side-link.active:hover {
             color: #fff;
-            background: linear-gradient(100deg, var(--blue-500), var(--blue-700));
+            background: linear-gradient(100deg, #368bd0, #236da9);
             box-shadow: 0 10px 22px rgba(37, 99, 235, .38), inset 0 1px 0 rgba(255, 255, 255, .22);
             transform: none;
         }
@@ -353,7 +353,7 @@
         .sidebar-footer {
             margin-top: 12px;
             padding-top: 14px;
-            border-top: 1px solid rgba(255, 255, 255, .09);
+            border-top: 1px solid #e3edf5;
         }
 
         .sidebar-user {
@@ -363,11 +363,11 @@
             margin-bottom: 10px;
             padding: 10px 12px;
             border-radius: var(--radius-md);
-            background: rgba(255, 255, 255, .06);
+            background: #f4f9fd;
         }
         .sidebar-user .user-avatar { width: 36px; height: 36px; font-size: .8rem; box-shadow: 0 0 0 2px rgba(255, 255, 255, .22); }
         .sidebar-user-name { font-size: .8rem; font-weight: 700; color: #fff; line-height: 1.2; overflow-wrap: anywhere; }
-        .sidebar-user-role { font-size: .7rem; color: rgba(170, 196, 238, .7); margin-top: 2px; }
+        .sidebar-user-role { font-size: .7rem; color: #7890a8; margin-top: 2px; }
 
         .side-link.logout { margin-bottom: 0; color: rgba(214, 227, 250, .85); }
         .side-link.logout:hover { background: rgba(255, 255, 255, .1); }
