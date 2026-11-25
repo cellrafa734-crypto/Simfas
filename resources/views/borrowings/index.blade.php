@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Peminjaman')
@@ -8,1049 +7,285 @@
     $isAdmin = auth()->user()->isAdmin();
 
     $statusConfig = [
-        'menunggu' => [
-            'label' => 'Menunggu',
-            'class' => 'bor-status-pending',
-            'dot' => 'bor-dot-pending',
-        ],
-        'disetujui' => [
-            'label' => 'Disetujui',
-            'class' => 'bor-status-approved',
-            'dot' => 'bor-dot-approved',
-        ],
-        'ditolak' => [
-            'label' => 'Ditolak',
-            'class' => 'bor-status-rejected',
-            'dot' => 'bor-dot-rejected',
-        ],
-        'dibatalkan' => [
-            'label' => 'Dibatalkan',
-            'class' => 'bor-status-cancelled',
-            'dot' => 'bor-dot-cancelled',
-        ],
+        'menunggu'         => ['Menunggu', 'st-wait', 'menunggu'],
+        'disetujui'        => ['Disetujui', 'st-ok', 'disetujui'],
+        'sedang_digunakan' => ['Sedang digunakan', 'st-ok', 'disetujui'],
+        'selesai'          => ['Selesai', 'st-done', 'riwayat'],
+        'ditolak'          => ['Ditolak', 'st-no', 'riwayat'],
+        'dibatalkan'       => ['Dibatalkan', 'st-done', 'riwayat'],
     ];
+
+    $fmt = fn ($d, $f) => $d->copy()->locale('id')->translatedFormat($f);
 @endphp
 
 <style>
-    .bor-page {
-        color: #183e60;
-        animation: borFadeUp .65s ease both;
-    }
-
-    @keyframes borFadeUp {
-        from { opacity: 0; transform: translateY(18px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-
-    .bor-page * {
-        box-sizing: border-box;
-    }
-
-    /* PAGE HEADER */
-    .bor-heading {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 20px;
-        margin: 5px 0 25px;
-    }
-
-    .bor-heading h2 {
-        color: #183e60;
-        font-size: 27px;
-        font-weight: 800;
-        letter-spacing: -.7px;
-        margin: 0 0 7px;
-    }
-
-    .bor-heading p {
-        color: #8294a5;
-        font-size: 13px;
-        margin: 0;
-        line-height: 1.7;
-    }
-
-    .bor-add-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 9px;
-        padding: 12px 19px;
-        border-radius: 11px;
-        background: linear-gradient(135deg, #368bd0, #236da9);
-        color: white !important;
-        font-size: 12px;
-        font-weight: 700;
-        text-decoration: none !important;
-        box-shadow: 0 7px 17px rgba(54,139,208,.2);
-        transition: .25s ease;
-        white-space: nowrap;
-    }
-
-    .bor-add-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 11px 22px rgba(54,139,208,.28);
-    }
-
-    .bor-add-icon {
-        font-size: 19px;
-        line-height: 1;
-    }
-
-    /* STATISTICS */
-    .bor-stats {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 17px;
-        margin-bottom: 27px;
-    }
-
-    .bor-stat-card {
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        min-height: 112px;
-        padding: 20px 22px;
-        background: white;
-        border: 1px solid #edf2f7;
-        border-radius: 17px;
-        box-shadow: 0 5px 20px rgba(24,62,96,.045);
-        transition: .25s ease;
-    }
-
-    .bor-stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 25px rgba(24,62,96,.09);
-    }
-
-    .bor-stat-icon {
-        flex: 0 0 49px;
-        width: 49px;
-        height: 49px;
-        display: grid;
-        place-items: center;
-        border-radius: 15px;
-        font-size: 22px;
-    }
-
-    .bor-icon-blue {
-        color: #368bd0;
-        background: #eaf5ff;
-    }
-
-    .bor-icon-yellow {
-        color: #d69b24;
-        background: #fff6df;
-    }
-
-    .bor-icon-green {
-        color: #21976b;
-        background: #e6f8ef;
-    }
-
-    .bor-stat-info {
-        min-width: 0;
-    }
-
-    .bor-stat-info span {
-        display: block;
-        color: #8798a8;
-        font-size: 11px;
-        font-weight: 600;
-        margin-bottom: 5px;
-    }
-
-    .bor-stat-info strong {
-        display: block;
-        color: #183e60;
-        font-size: 27px;
-        line-height: 1.1;
-        font-weight: 800;
-    }
-
-    .bor-stat-decoration {
-        position: absolute;
-        width: 85px;
-        height: 85px;
-        right: -27px;
-        bottom: -39px;
-        border-radius: 50%;
-        background: rgba(54,139,208,.045);
-    }
-
-    /* SECTION HEADING */
-    .bor-section-heading {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        margin-bottom: 15px;
-    }
-
-    .bor-section-heading h3 {
-        margin: 0 0 5px;
-        color: #183e60;
-        font-size: 17px;
-        font-weight: 800;
-    }
-
-    .bor-section-heading p {
-        margin: 0;
-        color: #91a0ad;
-        font-size: 11px;
-    }
-
-    .bor-total-label {
-        padding: 8px 12px;
-        border-radius: 9px;
-        color: #368bd0;
-        background: #eaf5ff;
-        font-size: 11px;
-        font-weight: 700;
-        white-space: nowrap;
-    }
-
-    /* TOOLBAR */
-    .bor-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 13px;
-        margin-bottom: 15px;
-    }
-
-    .bor-search {
-        position: relative;
-        flex: 1;
-        max-width: 440px;
-    }
-
-    .bor-search-icon {
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #9aabba;
-        font-size: 17px;
-        pointer-events: none;
-    }
-
-    .bor-search input {
-        width: 100%;
-        height: 43px;
-        padding: 0 15px 0 42px;
-        border: 1px solid #e7edf3;
-        border-radius: 11px;
-        outline: none;
-        color: #34536d;
-        background: white;
-        font-size: 12px;
-        transition: .2s ease;
-    }
-
-    .bor-search input:focus {
-        border-color: #75b6e9;
-        box-shadow: 0 0 0 3px rgba(54,139,208,.09);
-    }
-
-    .bor-search input::placeholder {
-        color: #a7b3bf;
-    }
-
-    .bor-filter {
-        width: 190px;
-        height: 43px;
-        padding: 0 13px;
-        border: 1px solid #e7edf3;
-        border-radius: 11px;
-        outline: none;
-        color: #526e84;
-        background: white;
-        font-size: 12px;
-        cursor: pointer;
-    }
-
-    .bor-filter:focus {
-        border-color: #75b6e9;
-        box-shadow: 0 0 0 3px rgba(54,139,208,.09);
-    }
-
-    /* TABLE CARD */
-    .bor-table-card {
-        overflow: hidden;
-        background: white;
-        border: 1px solid #edf1f5;
-        border-radius: 17px;
-        box-shadow: 0 6px 24px rgba(24,62,96,.045);
-    }
-
-    .bor-table-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        padding: 18px 21px;
-        border-bottom: 1px solid #edf1f5;
-    }
-
-    .bor-table-top strong {
-        color: #244b6b;
-        font-size: 13px;
-        font-weight: 800;
-    }
-
-    .bor-table-top span {
-        color: #99a8b5;
-        font-size: 11px;
-    }
-
-    .bor-table-wrap {
-        width: 100%;
-        overflow-x: auto;
-    }
-
-    .bor-table {
-        width: 100%;
-        min-width: 1050px;
-        margin: 0;
-        border-collapse: separate;
-        border-spacing: 0;
-    }
-
-    .bor-table thead th {
-        padding: 15px 16px;
-        color: #8193a3;
-        background: #f7fafd;
-        border-bottom: 1px solid #edf1f5;
-        font-size: 10px;
-        font-weight: 800;
-        letter-spacing: .45px;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
-
-    .bor-table tbody td {
-        padding: 16px;
-        color: #526b80;
-        border-bottom: 1px solid #f0f3f6;
-        font-size: 12px;
-        vertical-align: middle;
-    }
-
-    .bor-table tbody tr {
-        transition: background .2s ease;
-    }
-
-    .bor-table tbody tr:hover {
-        background: #f5faff;
-    }
-
-    .bor-table tbody tr:last-child td {
-        border-bottom: 0;
-    }
-
-    .bor-person {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: 145px;
-    }
-
-    .bor-avatar {
-        flex: 0 0 34px;
-        width: 34px;
-        height: 34px;
-        display: grid;
-        place-items: center;
-        border-radius: 11px;
-        color: #368bd0;
-        background: #eaf5ff;
-        font-size: 13px;
-        font-weight: 800;
-        text-transform: uppercase;
-    }
-
-    .bor-person-name {
-        color: #244b6b;
-        font-size: 12px;
-        font-weight: 700;
-    }
-
-    .bor-facility-name {
-        color: #315773;
-        font-weight: 700;
-    }
-
-    .bor-date {
-        display: block;
-        color: #365a75;
-        font-weight: 700;
-        white-space: nowrap;
-    }
-
-    .bor-time {
-        display: block;
-        color: #9aa9b6;
-        font-size: 10px;
-        margin-top: 4px;
-    }
-
-    .bor-purpose {
-        display: block;
-        max-width: 190px;
-        color: #72889a;
-        line-height: 1.6;
-        overflow-wrap: anywhere;
-    }
-
-    /* STATUS BADGES */
-    .bor-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 7px 10px;
-        border-radius: 30px;
-        font-size: 10px;
-        font-weight: 800;
-        white-space: nowrap;
-    }
-
-    .bor-status-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-    }
-
-    .bor-status-pending {
-        color: #b77d13;
-        background: #fff5dc;
-    }
-
-    .bor-dot-pending { background: #e8ae39; }
-
-    .bor-status-approved {
-        color: #16845c;
-        background: #e5f7ee;
-    }
-
-    .bor-dot-approved { background: #26a875; }
-
-    .bor-status-rejected {
-        color: #c44e58;
-        background: #ffebed;
-    }
-
-    .bor-dot-rejected { background: #df6570; }
-
-    .bor-status-cancelled {
-        color: #758391;
-        background: #edf1f4;
-    }
-
-    .bor-dot-cancelled { background: #98a5b1; }
-
-    .bor-reject-reason {
-        max-width: 160px;
-        margin-top: 7px;
-        color: #c44e58;
-        font-size: 10px;
-        line-height: 1.5;
-        overflow-wrap: anywhere;
-    }
-
-    /* ACTIONS */
-    .bor-actions {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        min-width: 180px;
-    }
-
-    .bor-action-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-        min-height: 31px;
-        padding: 7px 10px;
-        border: 0;
-        border-radius: 8px;
-        font-size: 10px;
-        font-weight: 700;
-        text-decoration: none;
-        cursor: pointer;
-        transition: .2s ease;
-        white-space: nowrap;
-    }
-
-    .bor-action-btn:hover {
-        transform: translateY(-2px);
-        filter: brightness(.97);
-    }
-
-    .bor-btn-approve {
-        color: #16845c;
-        background: #e5f7ee;
-    }
-
-    .bor-btn-reject {
-        color: #c44e58;
-        background: #ffebed;
-    }
-
-    .bor-btn-cancel {
-        color: #c44e58;
-        background: #fff0f1;
-    }
-
-    .bor-reject-form {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        min-width: 145px;
-    }
-
-    .bor-reject-form input {
-        width: 145px;
-        height: 31px;
-        padding: 0 9px;
-        border: 1px solid #f0dadd;
-        border-radius: 7px;
-        outline: none;
-        font-size: 10px;
-    }
-
-    .bor-reject-form input:focus {
-        border-color: #df8790;
-    }
-
-    .bor-reject-form button {
-        align-self: flex-start;
-    }
-
-    .bor-no-action {
-        color: #b0bbc4;
-        font-size: 11px;
-    }
-
-    /* EMPTY STATE */
-    .bor-empty {
-        padding: 65px 20px;
-        text-align: center;
-    }
-
-    .bor-empty-icon {
-        width: 75px;
-        height: 75px;
-        display: grid;
-        place-items: center;
-        margin: 0 auto 18px;
-        border-radius: 24px;
-        color: #65a8dc;
-        background: #edf7ff;
-        font-size: 32px;
-    }
-
-    .bor-empty h4 {
-        margin: 0 0 8px;
-        color: #315773;
-        font-size: 16px;
-        font-weight: 800;
-    }
-
-    .bor-empty p {
-        max-width: 350px;
-        margin: 0 auto 19px;
-        color: #91a2b0;
-        font-size: 12px;
-        line-height: 1.8;
-    }
-
-    .bor-empty-link {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 10px 16px;
-        border-radius: 9px;
-        color: white !important;
-        background: #368bd0;
-        text-decoration: none !important;
-        font-size: 11px;
-        font-weight: 700;
-    }
-
-    .bor-no-results {
-        display: none;
-        padding: 35px 15px;
-        color: #91a2b0;
-        text-align: center;
-        font-size: 12px;
-    }
-
-    /* PAGINATION */
-    .bor-pagination {
-        margin-top: 22px;
-    }
-
-    .bor-pagination nav {
-        display: flex;
-        justify-content: center;
-    }
-
-    .bor-pagination .pagination {
-        gap: 5px;
-    }
-
-    .bor-pagination .page-link {
-        border: 1px solid #e5edf4;
-        border-radius: 8px !important;
-        color: #368bd0;
-        font-size: 12px;
-        box-shadow: none;
-    }
-
-    .bor-pagination .active .page-link {
-        color: white;
-        background: #368bd0;
-        border-color: #368bd0;
-    }
-
-    /* RESPONSIVE */
-    @media (max-width: 800px) {
-        .bor-stats {
-            gap: 10px;
-        }
-
-        .bor-stat-card {
-            padding: 15px;
-            gap: 10px;
-        }
-
-        .bor-stat-icon {
-            width: 40px;
-            height: 40px;
-            flex-basis: 40px;
-            font-size: 18px;
-        }
-
-        .bor-stat-info strong {
-            font-size: 23px;
-        }
-    }
-
-    @media (max-width: 600px) {
-        .bor-heading {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-
-        .bor-add-btn {
-            width: 100%;
-        }
-
-        .bor-stats {
-            grid-template-columns: 1fr;
-        }
-
-        .bor-stat-card {
-            min-height: 88px;
-        }
-
-        .bor-toolbar {
-            align-items: stretch;
-            flex-direction: column;
-        }
-
-        .bor-search {
-            max-width: none;
-        }
-
-        .bor-filter {
-            width: 100%;
-        }
-
-        .bor-section-heading {
-            align-items: flex-start;
-            flex-direction: column;
-        }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .bor-page,
-        .bor-stat-card,
-        .bor-table tbody tr,
-        .bor-action-btn {
-            animation: none !important;
-            transition: none !important;
-        }
+    .sf-bp { display: grid; gap: 20px; max-width: 1100px; }
+    .sf-bp h2, .sf-bp h4 { margin: 0; }
+
+    .sf-bp-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .sf-bp-head h2 { font-size: 1.6rem; letter-spacing: -.02em; }
+    .sf-bp-head p { margin: 4px 0 0; color: var(--muted); }
+
+    .sf-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        padding: 11px 18px; border-radius: var(--radius-md); font-weight: 700; font-size: .92rem;
+        text-decoration: none; border: 0; cursor: pointer; color: #fff;
+        background: linear-gradient(135deg, var(--blue-600), var(--blue-700));
+        box-shadow: 0 8px 20px rgba(37, 99, 235, .25);
+        transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+    }
+    .sf-btn:hover { color: #fff; transform: translateY(-2px); box-shadow: 0 12px 26px rgba(37, 99, 235, .34); }
+
+    /* Tab + pencarian */
+    .sf-bar { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .sf-tabs { display: inline-flex; gap: 4px; padding: 4px; background: #e9eff9; border-radius: 14px; flex-wrap: wrap; }
+    .sf-tab {
+        display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border: 0; border-radius: 11px;
+        background: transparent; color: var(--ink-soft); font-weight: 600; font-size: .88rem; cursor: pointer;
+        transition: all .2s var(--ease);
+    }
+    .sf-tab:hover { color: var(--blue-700); }
+    .sf-tab.on { background: var(--surface); color: var(--navy-900); box-shadow: var(--shadow-xs); }
+    .sf-pill { min-width: 20px; padding: 1px 7px; border-radius: 999px; background: #f59e0b; color: #fff; font-size: .72rem; font-weight: 700; text-align: center; }
+
+    .sf-find { position: relative; flex: 1; min-width: 200px; max-width: 340px; }
+    .sf-find svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; stroke-linecap: round; }
+    .sf-find input {
+        width: 100%; padding: 10px 14px 10px 38px; border: 1px solid var(--line); border-radius: var(--radius-md);
+        background: var(--surface); font-size: .9rem;
+    }
+    .sf-find input:focus { outline: none; border-color: var(--blue-500); box-shadow: 0 0 0 4px rgba(59, 130, 246, .15); }
+
+    /* Daftar kartu */
+    .sf-items { display: grid; gap: 12px; }
+    .sf-item {
+        display: grid; grid-template-columns: 64px 1fr auto; gap: 16px; align-items: center;
+        padding: 16px 18px; background: var(--surface); border: 1px solid var(--line);
+        border-radius: var(--radius-lg); box-shadow: var(--shadow-xs);
+        transition: transform .22s var(--ease), box-shadow .22s var(--ease), border-color .22s;
+        animation: sfIn .4s var(--ease) backwards;
+    }
+    .sf-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); border-color: #bcd2f5; }
+    @keyframes sfIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+    .sf-date { width: 64px; padding: 8px 0; border-radius: 14px; background: var(--blue-50); text-align: center; line-height: 1.1; }
+    .sf-date b { display: block; font-size: 1.5rem; color: var(--navy-900); }
+    .sf-date span { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--blue-600); }
+
+    .sf-main { min-width: 0; display: grid; gap: 3px; }
+    .sf-main h4 { font-size: 1.02rem; }
+    .sf-meta { color: var(--ink-soft); font-size: .88rem; }
+    .sf-purpose { color: var(--muted); font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sf-who { font-size: .8rem; font-weight: 700; color: var(--blue-700); }
+    .sf-reason { margin-top: 6px; padding: 7px 11px; border-radius: 10px; background: #fef2f2; border: 1px solid #fbcaca; color: #991b1b; font-size: .83rem; }
+
+    .sf-side { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+    .sf-st { padding: 5px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700; white-space: nowrap; }
+    .st-wait { background: #fffbeb; color: #92400e; }
+    .st-ok { background: #ecfdf3; color: #166534; }
+    .st-no { background: #fef2f2; color: #991b1b; }
+    .st-done { background: #eef2f7; color: #475569; }
+
+    .sf-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+    .sf-acts form { margin: 0; }
+    .sf-a {
+        padding: 7px 14px; border-radius: 10px; font-size: .83rem; font-weight: 700; cursor: pointer;
+        text-decoration: none; border: 1px solid var(--blue-100); background: var(--blue-50); color: var(--blue-700);
+        transition: all .18s;
+    }
+    .sf-a:hover { background: var(--blue-600); border-color: var(--blue-600); color: #fff; }
+    .sf-a.ok { background: #16a34a; border-color: #16a34a; color: #fff; }
+    .sf-a.ok:hover { background: #15803d; }
+    .sf-a.bad { background: #fff; border-color: #fbcaca; color: #b91c1c; }
+    .sf-a.bad:hover { background: #dc2626; border-color: #dc2626; color: #fff; }
+
+    /* Form tolak yang muncul saat dibutuhkan */
+    .sf-rej { position: relative; }
+    .sf-rej summary { list-style: none; }
+    .sf-rej summary::-webkit-details-marker { display: none; }
+    .sf-rej[open] summary { background: #dc2626; border-color: #dc2626; color: #fff; }
+    .sf-rej form { display: flex; gap: 6px; margin-top: 8px; }
+    .sf-rej input { padding: 7px 11px; border: 1px solid #fbcaca; border-radius: 10px; font-size: .84rem; width: 210px; max-width: 100%; }
+    .sf-rej input:focus { outline: none; border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, .15); }
+
+    .sf-empty { text-align: center; padding: 48px 20px; background: var(--surface); border: 1px dashed #c3d3ea; border-radius: var(--radius-lg); color: var(--muted); }
+    .sf-empty h4 { color: var(--navy-900); margin-bottom: 6px; }
+    .sf-empty .sf-btn { margin-top: 14px; }
+
+    @media (prefers-reduced-motion: reduce) { .sf-item { animation: none; } }
+    @media (max-width: 720px) {
+        .sf-item { grid-template-columns: 56px 1fr; }
+        .sf-date { width: 56px; }
+        .sf-side { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .sf-find { max-width: none; }
+        .sf-btn.sf-new { width: 100%; }
     }
 </style>
 
-<div class="bor-page">
+<div class="sf-bp">
 
-    {{-- PAGE HEADER --}}
-    <section class="bor-heading">
+    <section class="sf-bp-head">
         <div>
             <h2>Peminjaman</h2>
             <p>
-                Kelola dan pantau seluruh pengajuan peminjaman
-                fasilitas kampus dalam satu tempat.
-            </p>
-        </div>
-
-        @if(!$isAdmin)
-            <a href="/borrowings/create" class="bor-add-btn">
-                <span class="bor-add-icon">＋</span>
-                Ajukan Peminjaman
-            </a>
-        @endif
-    </section>
-
-    {{-- STATISTICS --}}
-    <section class="bor-stats">
-
-        <div class="bor-stat-card">
-            <div class="bor-stat-icon bor-icon-blue">▤</div>
-            <div class="bor-stat-info">
-                <span>Total Pengajuan</span>
-                <strong>{{ $totalBorrowings }}</strong>
-            </div>
-            <div class="bor-stat-decoration"></div>
-        </div>
-
-        <div class="bor-stat-card">
-            <div class="bor-stat-icon bor-icon-yellow">◷</div>
-            <div class="bor-stat-info">
-                <span>Menunggu Persetujuan</span>
-                <strong>{{ $pendingBorrowings }}</strong>
-            </div>
-            <div class="bor-stat-decoration"></div>
-        </div>
-
-        <div class="bor-stat-card">
-            <div class="bor-stat-icon bor-icon-green">✓</div>
-            <div class="bor-stat-info">
-                <span>Disetujui</span>
-                <strong>{{ $approvedBorrowings }}</strong>
-            </div>
-            <div class="bor-stat-decoration"></div>
-        </div>
-
-    </section>
-
-    {{-- SECTION TITLE --}}
-    <div class="bor-section-heading">
-        <div>
-            <h3>Daftar Pengajuan</h3>
-            <p>
                 @if($isAdmin)
-                    Pantau dan proses pengajuan peminjaman dari seluruh pengguna.
+                    Proses pengajuan dari mahasiswa dan organisasi.
                 @else
-                    Pantau status pengajuan peminjaman fasilitas kamu.
+                    Pantau status pengajuanmu di satu tempat.
                 @endif
             </p>
         </div>
 
-        <span class="bor-total-label">
-            {{ $items->total() }} Pengajuan
-        </span>
-    </div>
+        @unless($isAdmin)
+            <a href="/borrowings/create" class="sf-btn sf-new">＋ Ajukan Peminjaman</a>
+        @endunless
+    </section>
 
-    {{-- SEARCH AND FILTER --}}
-    <div class="bor-toolbar">
-
-        <div class="bor-search">
-            <span class="bor-search-icon">⌕</span>
-            <input
-                type="text"
-                id="borSearch"
-                placeholder="Cari pemohon, fasilitas, atau tujuan..."
-                autocomplete="off"
-            >
+    {{-- TAB STATUS + PENCARIAN --}}
+    <section class="sf-bar">
+        <div class="sf-tabs" id="sfTabs" role="tablist">
+            <button type="button" class="sf-tab on" data-group="">Semua</button>
+            <button type="button" class="sf-tab" data-group="menunggu">
+                Menunggu
+                @if($pendingBorrowings > 0)<span class="sf-pill">{{ $pendingBorrowings }}</span>@endif
+            </button>
+            <button type="button" class="sf-tab" data-group="disetujui">Disetujui</button>
+            <button type="button" class="sf-tab" data-group="riwayat">Riwayat</button>
         </div>
 
-        <select id="borStatusFilter" class="bor-filter">
-            <option value="">Semua Status</option>
-            <option value="menunggu">Menunggu</option>
-            <option value="disetujui">Disetujui</option>
-            <option value="ditolak">Ditolak</option>
-            <option value="dibatalkan">Dibatalkan</option>
-        </select>
-
-    </div>
-
-    {{-- TABLE --}}
-    <section class="bor-table-card">
-
-        <div class="bor-table-top">
-            <strong>Riwayat Peminjaman</strong>
-            <span>Data pengajuan fasilitas kampus</span>
-        </div>
-
-        <div class="bor-table-wrap">
-
-            <table class="bor-table">
-                <thead>
-                    <tr>
-                        <th>Pemohon</th>
-                        <th>Fasilitas</th>
-                        <th>Unit</th>
-                        <th>Mulai</th>
-                        <th>Selesai</th>
-                        <th>Tujuan</th>
-                        <th>Status</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-
-                <tbody id="borTableBody">
-
-                    @forelse($items as $b)
-
-                        @php
-                            $status = $b->status ?? '';
-                            $statusInfo = $statusConfig[$status] ?? [
-                                'label' => ucfirst($status),
-                                'class' => 'bor-status-cancelled',
-                                'dot' => 'bor-dot-cancelled',
-                            ];
-
-                            $userName = $b->user->name ?? 'Pengguna';
-                            $facilityName = $b->facility->name ?? 'Fasilitas tidak tersedia';
-
-                            $searchText = strtolower(
-                                $userName . ' ' .
-                                $facilityName . ' ' .
-                                ($b->purpose ?? '') . ' ' .
-                                $status
-                            );
-                        @endphp
-
-                        <tr
-                            class="bor-row"
-                            data-search="{{ $searchText }}"
-                            data-status="{{ $status }}"
-                        >
-
-                            {{-- PEMOHON --}}
-                            <td>
-                                <div class="bor-person">
-                                    <div class="bor-avatar">
-                                        {{ substr($userName, 0, 1) }}
-                                    </div>
-                                    <span class="bor-person-name">
-                                        {{ $userName }}
-                                    </span>
-                                </div>
-                            </td>
-
-                            {{-- FASILITAS --}}
-                            <td>
-                                <span class="bor-facility-name">
-                                    {{ $facilityName }}
-                                </span>
-                            </td>
-
-                            {{-- UNIT --}}
-                            <td>
-                                <strong>{{ $b->units }}</strong>
-                            </td>
-
-                            {{-- MULAI --}}
-                            <td>
-                                <span class="bor-date">
-                                    {{ $b->start_at->format('d/m/Y') }}
-                                </span>
-                                <span class="bor-time">
-                                    {{ $b->start_at->format('H:i') }} WIB
-                                </span>
-                            </td>
-
-                            {{-- SELESAI --}}
-                            <td>
-                                <span class="bor-date">
-                                    {{ $b->end_at->format('d/m/Y') }}
-                                </span>
-                                <span class="bor-time">
-                                    {{ $b->end_at->format('H:i') }} WIB
-                                </span>
-                            </td>
-
-                            {{-- TUJUAN --}}
-                            <td>
-                                <span class="bor-purpose">
-                                    {{ $b->purpose }}
-                                </span>
-                            </td>
-
-                            {{-- STATUS --}}
-                            <td>
-                                <span class="bor-status {{ $statusInfo['class'] }}">
-                                    <span class="bor-status-dot {{ $statusInfo['dot'] }}"></span>
-                                    {{ $statusInfo['label'] }}
-                                </span>
-
-                                @if($b->reject_reason)
-                                    <div class="bor-reject-reason">
-                                        Alasan: {{ $b->reject_reason }}
-                                    </div>
-                                @endif
-                            </td>
-
-                            {{-- ACTIONS --}}
-                            <td>
-                                <div class="bor-actions">
-                                    <a href="{{ route('borrowings.show', $b->id) }}"
-                                       class="btn btn-sm btn-outline-primary mb-1">
-                                        Detail
-                                    </a>
-
-                                    @if($isAdmin && $b->status === 'menunggu')
-
-                                        <form
-                                            method="POST"
-                                            action="/borrowings/{{ $b->id }}/approve"
-                                            onsubmit="return confirm('Setujui pengajuan peminjaman ini?')"
-                                        >
-                                            @csrf
-                                            <button type="submit" class="bor-action-btn bor-btn-approve">
-                                                ✓ Setujui
-                                            </button>
-                                        </form>
-
-                                        <form
-                                            method="POST"
-                                            action="/borrowings/{{ $b->id }}/reject"
-                                            class="bor-reject-form"
-                                            onsubmit="return confirm('Tolak pengajuan peminjaman ini?')"
-                                        >
-                                            @csrf
-
-                                            <input
-                                                type="text"
-                                                name="reject_reason"
-                                                placeholder="Alasan penolakan..."
-                                                maxlength="255"
-                                                required
-                                            >
-
-                                            <button type="submit" class="bor-action-btn bor-btn-reject">
-                                                ✕ Tolak
-                                            </button>
-                                        </form>
-
-                                    @elseif($b->user_id === auth()->id() && $b->status === 'menunggu')
-
-                                        <form
-                                            method="POST"
-                                            action="/borrowings/{{ $b->id }}/cancel"
-                                            onsubmit="return confirm('Yakin ingin membatalkan pengajuan ini?')"
-                                        >
-                                            @csrf
-                                            <button type="submit" class="bor-action-btn bor-btn-cancel">
-                                                Batalkan
-                                            </button>
-                                        </form>
-
-                                    @else
-
-                                        <span class="bor-no-action">—</span>
-
-                                    @endif
-
-                                </div>
-                            </td>
-
-                        </tr>
-
-                    @empty
-
-                        <tr>
-                            <td colspan="8">
-                                <div class="bor-empty">
-                                    <div class="bor-empty-icon">▤</div>
-
-                                    <h4>Belum Ada Pengajuan</h4>
-
-                                    <p>
-                                        Belum ada data peminjaman fasilitas yang tercatat.
-                                        Pengajuan baru akan muncul di halaman ini.
-                                    </p>
-
-                                    @if(!$isAdmin)
-                                        <a href="/borrowings/create" class="bor-empty-link">
-                                            ＋ Ajukan Peminjaman
-                                        </a>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-
-                    @endforelse
-
-                </tbody>
-            </table>
-
-            <div class="bor-no-results" id="borNoResults">
-                <div style="font-size:27px; margin-bottom:8px;">⌕</div>
-                <strong>Data tidak ditemukan</strong>
-                <div style="margin-top:5px;">
-                    Coba gunakan kata kunci atau filter status yang berbeda.
-                </div>
-            </div>
-
+        <div class="sf-find">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input type="search" id="sfFind" placeholder="Cari fasilitas atau kegiatan..." aria-label="Cari peminjaman" autocomplete="off">
         </div>
     </section>
 
-    {{-- PAGINATION --}}
-    @if($items->hasPages())
-        <div class="bor-pagination">
-            {{ $items->links() }}
+    {{-- DAFTAR --}}
+    <section class="sf-items" id="sfItems">
+
+        @forelse($items as $b)
+            @php
+                $conf = $statusConfig[$b->status] ?? [ucfirst($b->status), 'st-done', 'riwayat'];
+                $userName = $b->user->name ?? 'Pengguna';
+                $facilityName = $b->facility->name ?? 'Fasilitas tidak tersedia';
+                $sameDay = $b->start_at->isSameDay($b->end_at);
+            @endphp
+
+            <article class="sf-item"
+                     style="animation-delay: {{ min($loop->index, 8) * 35 }}ms"
+                     data-group="{{ $conf[2] }}"
+                     data-search="{{ strtolower($userName . ' ' . $facilityName . ' ' . ($b->purpose ?? '') . ' ' . $conf[0]) }}">
+
+                <div class="sf-date" aria-hidden="true">
+                    <b>{{ $b->start_at->format('d') }}</b>
+                    <span>{{ $fmt($b->start_at, 'M') }}</span>
+                </div>
+
+                <div class="sf-main">
+                    @if($isAdmin)
+                        <span class="sf-who">{{ $userName }}</span>
+                    @endif
+                    <h4>{{ $facilityName }} · {{ $b->units }} unit</h4>
+                    <span class="sf-meta">
+                        @if($sameDay)
+                            {{ $fmt($b->start_at, 'l, d F Y') }} · {{ $b->start_at->format('H:i') }}–{{ $b->end_at->format('H:i') }} WIB
+                        @else
+                            {{ $fmt($b->start_at, 'd M, H:i') }} → {{ $fmt($b->end_at, 'd M Y, H:i') }} WIB
+                        @endif
+                    </span>
+                    <span class="sf-purpose">{{ $b->purpose }}</span>
+
+                    @if($b->reject_reason)
+                        <div class="sf-reason">Alasan: {{ $b->reject_reason }}</div>
+                    @endif
+                </div>
+
+                <div class="sf-side">
+                    <span class="sf-st {{ $conf[1] }}">{{ $conf[0] }}</span>
+
+                    <div class="sf-acts">
+                        <a href="{{ route('borrowings.show', $b->id) }}" class="sf-a">Detail</a>
+
+                        @if($isAdmin && $b->status === 'menunggu')
+                            <form method="POST" action="/borrowings/{{ $b->id }}/approve"
+                                  onsubmit="return confirm('Setujui pengajuan peminjaman ini?')">
+                                @csrf
+                                <button type="submit" class="sf-a ok">Setujui</button>
+                            </form>
+
+                            <details class="sf-rej">
+                                <summary class="sf-a bad">Tolak</summary>
+                                <form method="POST" action="/borrowings/{{ $b->id }}/reject"
+                                      onsubmit="return confirm('Tolak pengajuan peminjaman ini?')">
+                                    @csrf
+                                    <input type="text" name="reject_reason" placeholder="Alasan penolakan..." maxlength="255" required>
+                                    <button type="submit" class="sf-a bad">Kirim</button>
+                                </form>
+                            </details>
+
+                        @elseif($b->user_id === auth()->id() && $b->status === 'menunggu')
+                            <form method="POST" action="/borrowings/{{ $b->id }}/cancel"
+                                  onsubmit="return confirm('Yakin ingin membatalkan pengajuan ini?')">
+                                @csrf
+                                <button type="submit" class="sf-a bad">Batalkan</button>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            </article>
+
+        @empty
+            <div class="sf-empty">
+                <h4>Belum ada pengajuan</h4>
+                <p>Pengajuan peminjaman fasilitas akan muncul di sini.</p>
+                @unless($isAdmin)
+                    <a href="/facilities" class="sf-btn">Cari fasilitas untuk dipinjam</a>
+                @endunless
+            </div>
+        @endforelse
+
+        <div class="sf-empty" id="sfNone" style="display:none;">
+            <h4>Tidak ada yang cocok</h4>
+            <p>Coba ganti tab atau kata kunci pencarian.</p>
         </div>
+    </section>
+
+    @if($items->hasPages())
+        <div>{{ $items->links() }}</div>
     @endif
 
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    var tabs = document.getElementById('sfTabs');
+    var find = document.getElementById('sfFind');
+    var rows = document.querySelectorAll('.sf-item');
+    var none = document.getElementById('sfNone');
+    var group = '';
 
-    const searchInput = document.getElementById('borSearch');
-    const statusFilter = document.getElementById('borStatusFilter');
-    const rows = document.querySelectorAll('.bor-row');
-    const noResults = document.getElementById('borNoResults');
+    function apply() {
+        var q = find.value.toLowerCase().trim();
+        var shown = 0;
 
-    function filterBorrowings() {
-        const keyword = searchInput.value.toLowerCase().trim();
-        const selectedStatus = statusFilter.value;
-
-        let visibleCount = 0;
-
-        rows.forEach(function (row) {
-            const searchData = row.dataset.search || '';
-            const status = row.dataset.status || '';
-
-            const matchesSearch = searchData.includes(keyword);
-            const matchesStatus = !selectedStatus || status === selectedStatus;
-
-            if (matchesSearch && matchesStatus) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
+        rows.forEach(function (r) {
+            var ok = (!group || r.dataset.group === group) && (r.dataset.search || '').includes(q);
+            r.style.display = ok ? '' : 'none';
+            if (ok) shown++;
         });
 
-        if (noResults) {
-            noResults.style.display =
-                rows.length > 0 && visibleCount === 0 ? 'block' : 'none';
-        }
+        if (none) none.style.display = rows.length > 0 && shown === 0 ? '' : 'none';
     }
 
-    searchInput.addEventListener('input', filterBorrowings);
-    statusFilter.addEventListener('change', filterBorrowings);
+    tabs.addEventListener('click', function (e) {
+        var btn = e.target.closest('.sf-tab');
+        if (!btn) return;
+        tabs.querySelectorAll('.sf-tab').forEach(function (b) { b.classList.remove('on'); });
+        btn.classList.add('on');
+        group = btn.dataset.group || '';
+        apply();
+    });
 
+    find.addEventListener('input', apply);
 });
 </script>
 
