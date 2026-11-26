@@ -583,7 +583,7 @@
         </div>
 
         <div class="visual-content">
-            <span class="welcome-label">✦ PORTAL SISTEM INFORMASI KAMPUS</span>
+            <span class="welcome-label">PORTAL SISTEM INFORMASI KAMPUS</span>
 
             <h1>
                 Selamat Datang di
@@ -623,7 +623,7 @@
                     <path d="M55 195L39 181M405 195L421 181" stroke="#75B4E5" stroke-width="4" stroke-linecap="round"/>
                 </svg>
 
-                <div class="glass-badge">✦ Sistem Fasilitas Terintegrasi</div>
+                <div class="glass-badge">Sistem Fasilitas Terintegrasi</div>
             </div>
         </div>
 
@@ -644,7 +644,7 @@
             @if ($errors->any())
                 <div class="error-message">
                     @foreach ($errors->all() as $error)
-                        <div>⚠ {{ $error }}</div>
+                        <div>{{ $error }}</div>
                     @endforeach
                 </div>
             @endif

@@ -388,7 +388,7 @@
     <div class="facility-form-card">
 
         <div class="facility-heading">
-            <div class="facility-heading-icon">🏢</div>
+            <div class="facility-heading-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg></div>
             <div>
                 <h2>{{ $f->exists ? 'Ubah Fasilitas' : 'Tambah Fasilitas' }}</h2>
                 <p>
@@ -544,7 +544,7 @@
                         <span style="display:block;font-size:13px;font-weight:700;margin-bottom:8px;color:#38546e">Foto fasilitas <small style="color:#91a4b7;font-weight:400">(Opsional)</small></span>
 
                         <label @class(['upload-zone', 'is-invalid' => $errors->has('image')]) id="uploadZone" for="facilityImage">
-                            <div class="upload-icon">📷</div>
+                            <div class="upload-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3Z"/><circle cx="12" cy="13" r="3"/></svg></div>
                             <strong>Klik atau tarik foto ke sini</strong>
                             <small>JPG, JPEG, PNG, WEBP · Maksimal 4 MB</small>
 

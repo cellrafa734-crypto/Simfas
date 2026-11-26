@@ -313,7 +313,7 @@
                         </div>
                         <div class="small mt-2" id="sawWeightMessage">
                             @if($weightOk)
-                                <span class="text-success">✓ Total bobot sudah sesuai.</span>
+                                <span class="text-success">Total bobot sudah sesuai.</span>
                             @else
                                 <span class="text-danger">Total bobot harus tepat 100% sebelum disimpan.</span>
                             @endif
@@ -570,7 +570,7 @@ document.addEventListener('DOMContentLoaded', function () {
         progress.style.width = Math.min(100, Math.max(0, t * 100)) + '%';
         progress.classList.toggle('is-bad', !ok);
         message.innerHTML = ok
-            ? '<span class="text-success">✓ Total bobot sudah sesuai.</span>'
+            ? '<span class="text-success">Total bobot sudah sesuai.</span>'
             : '<span class="text-danger">Total bobot harus tepat 100% sebelum disimpan (sekarang ' + (t * 100).toFixed(2) + '%).</span>';
     }
 

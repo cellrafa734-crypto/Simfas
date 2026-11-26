@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Facility;
 use App\Models\Borrowing;
-use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
@@ -21,8 +20,12 @@ class DashboardController extends Controller
 
         if ($u->role === 'admin') {
             $stats['Menunggu persetujuan'] = Borrowing::where('status', 'menunggu')->count();
+            $stats['Berlangsung hari ini'] = Borrowing::where('status', 'disetujui')
+                ->where('start_at', '<=', now())
+                ->where('end_at', '>=', now())
+                ->count();
             $stats['Total pengajuan'] = Borrowing::count();
-        } else {
+        } elseif ($u->role !== 'petugas') {
             $stats['Pengajuan saya'] = Borrowing::where('user_id', $u->id)->count();
         }
 
@@ -35,45 +38,37 @@ class DashboardController extends Controller
             ->take(8)
             ->get();
 
-        // Grafik peminjaman per bulan pada tahun berjalan
-        $monthlyLabels = [];
-        $monthlyBorrowings = [];
+        // Data operasional untuk admin: yang perlu diputuskan dan jadwal terdekat
+        $pendingQueue = collect();
+        $upcomingSchedule = collect();
 
-        for ($month = 1; $month <= 12; $month++) {
-            $date = Carbon::create(now()->year, $month, 1);
+        if ($u->role === 'admin') {
+            $pendingQueue = Borrowing::with(['user', 'facility'])
+                ->where('status', 'menunggu')
+                ->oldest()
+                ->take(6)
+                ->get();
 
-            $monthlyLabels[] = $date->locale('id')->translatedFormat('M');
-
-            $monthlyBorrowings[] = Borrowing::whereYear('created_at', now()->year)
-                ->whereMonth('created_at', $month)
-                ->when($u->role !== 'admin', function ($query) use ($u) {
-                    $query->where('user_id', $u->id);
-                })
-                ->count();
+            $upcomingSchedule = Borrowing::with(['user', 'facility'])
+                ->where('status', 'disetujui')
+                ->where('end_at', '>=', now())
+                ->orderBy('start_at')
+                ->take(6)
+                ->get();
         }
 
-        // Komposisi status fasilitas
-        $facilityStatusLabels = [
-            'Tersedia',
-            'Dipinjam',
-            'Pemeliharaan',
-            'Tidak dapat digunakan',
-        ];
-
-        $facilityStatusValues = [
-            Facility::where('status', 'tersedia')->count(),
-            Facility::where('status', 'dipinjam')->count(),
-            Facility::where('status', 'pemeliharaan')->count(),
-            Facility::where('status', 'tidak_dapat_digunakan')->count(),
-        ];
+        // Fasilitas yang sedang tidak bisa dipinjam (admin dan petugas)
+        $attentionFacilities = Facility::whereIn('status', ['pemeliharaan', 'tidak_dapat_digunakan'])
+            ->orderBy('name')
+            ->take(6)
+            ->get();
 
         return view('dashboard', compact(
             'stats',
             'recentBorrowings',
-            'monthlyLabels',
-            'monthlyBorrowings',
-            'facilityStatusLabels',
-            'facilityStatusValues'
+            'pendingQueue',
+            'upcomingSchedule',
+            'attentionFacilities'
         ));
     }
 }

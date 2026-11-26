@@ -23,6 +23,26 @@
 
     $isAdmin = auth()->user()->role === 'admin';
     $isOwner = $borrowing->user_id === auth()->id();
+
+    // Ikon SVG inline (tanpa emoji dan tanpa library tambahan)
+    $svg = fn (string $d) => new \Illuminate\Support\HtmlString(
+        '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' . $d . '</svg>'
+    );
+    $icons = [
+        'user' => '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+        'building' => '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/>',
+        'calendar' => '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+        'note' => '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4M10 13H8M16 17H8"/>',
+        'back' => '<path d="m15 18-6-6 6-6"/>',
+    ];
+
+    $mins = $borrowing->start_at->diffInMinutes($borrowing->end_at);
+    $duration = trim(
+        (intdiv($mins, 1440) ? intdiv($mins, 1440) . ' hari ' : '') .
+        (intdiv($mins % 1440, 60) ? intdiv($mins % 1440, 60) . ' jam ' : '') .
+        ($mins % 60 ? ($mins % 60) . ' menit' : '')
+    ) ?: '-';
+    $fmtDate = fn ($d) => $d->locale('id')->translatedFormat('d F Y');
 @endphp
 
 <style>
@@ -76,24 +96,66 @@
         transition: transform .25s ease, box-shadow .25s ease;
     }
 
-    .detail-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 13px 28px rgba(24,62,96,.09);
-    }
-
     .detail-label {
         color: var(--muted);
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: .7px;
-        margin-bottom: 7px;
+        letter-spacing: .6px;
     }
 
     .detail-value {
         color: var(--navy);
-        font-weight: 700;
+        font-weight: 600;
         font-size: 15px;
+        overflow-wrap: anywhere;
+    }
+
+    /* Baris informasi: label di kiri (redup), nilai di kanan (tegas) */
+    .info-row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 4px 16px;
+        align-items: baseline;
+        padding: 12px 0;
+        border-top: 1px solid #eef2f7;
+    }
+
+    .info-row:first-of-type { border-top: 0; padding-top: 0; }
+    .info-row:last-child { padding-bottom: 0; }
+
+    .detail-value.is-primary { font-size: 18px; font-weight: 800; letter-spacing: -.2px; }
+    .detail-value.is-plain { color: #475569; font-weight: 500; }
+
+    .detail-value .sub {
+        display: block;
+        margin-top: 2px;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .chip {
+        display: inline-block;
+        padding: 3px 11px;
+        border-radius: 8px;
+        background: #eef3f9;
+        color: #334e68;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .chip.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .3px; }
+    .chip.ok { background: #dcfce7; color: #166534; }
+    .chip.bad { background: #fee2e2; color: #991b1b; }
+
+    .purpose-box {
+        padding: 14px 16px;
+        border-left: 4px solid #368bd0;
+        border-radius: 4px 12px 12px 4px;
+        background: #f6f9fc;
+        color: #334e68;
+        line-height: 1.75;
         overflow-wrap: anywhere;
     }
 
@@ -107,7 +169,7 @@
         background: #eaf5ff;
         color: var(--blue);
         font-size: 20px;
-        margin-bottom: 16px;
+        margin-bottom: 14px;
     }
 
     .detail-section-title {
@@ -193,14 +255,15 @@
     @media(max-width: 767px) {
         .detail-hero { padding: 23px; }
         .detail-card { padding: 19px; }
+        .info-row { grid-template-columns: 1fr; }
     }
 </style>
 
 <div class="detail-page">
 
     <div class="detail-hero mb-4">
-        <a href="{{ route('borrowings.index') }}" class="detail-back">
-            ← Kembali ke Peminjaman
+        <a href="{{ route('borrowings.index') }}" class="detail-back d-inline-flex align-items-center gap-1">
+            {!! $svg($icons['back']) !!} Kembali ke Peminjaman
         </a>
 
         <div class="row align-items-center mt-4">
@@ -224,84 +287,95 @@
 
         <div class="col-md-6">
             <div class="detail-card">
-                <div class="detail-icon">👤</div>
+                <div class="detail-icon">{!! $svg($icons['user']) !!}</div>
                 <h5 class="detail-section-title">Informasi Pemohon</h5>
 
-                <div class="mb-3">
+                <div class="info-row">
                     <div class="detail-label">Nama Pemohon</div>
-                    <div class="detail-value">{{ $borrowing->user->name }}</div>
+                    <div class="detail-value is-primary">{{ $borrowing->user->name }}</div>
                 </div>
-
-                <div class="mb-3">
+                <div class="info-row">
                     <div class="detail-label">Email</div>
-                    <div class="detail-value">{{ $borrowing->user->email }}</div>
+                    <div class="detail-value is-plain">{{ $borrowing->user->email }}</div>
                 </div>
-
-                <div>
+                <div class="info-row">
                     <div class="detail-label">Peran Akun</div>
-                    <div class="detail-value text-capitalize">
-                        {{ $borrowing->user->role }}
-                    </div>
+                    <div class="detail-value"><span class="chip text-capitalize">{{ $borrowing->user->role }}</span></div>
+                </div>
+                <div class="info-row">
+                    <div class="detail-label">Diajukan Pada</div>
+                    <div class="detail-value is-plain">{{ $fmtDate($borrowing->created_at) }}, {{ $borrowing->created_at->format('H:i') }} WIB</div>
                 </div>
             </div>
         </div>
 
         <div class="col-md-6">
             <div class="detail-card">
-                <div class="detail-icon">🏫</div>
+                <div class="detail-icon">{!! $svg($icons['building']) !!}</div>
                 <h5 class="detail-section-title">Informasi Fasilitas</h5>
 
-                <div class="mb-3">
+                <div class="info-row">
                     <div class="detail-label">Nama Fasilitas</div>
-                    <div class="detail-value">{{ $borrowing->facility->name }}</div>
+                    <div class="detail-value is-primary">{{ $borrowing->facility->name }}</div>
                 </div>
-
-                <div class="mb-3">
+                <div class="info-row">
                     <div class="detail-label">Kode Fasilitas</div>
-                    <div class="detail-value">{{ $borrowing->facility->code }}</div>
+                    <div class="detail-value"><span class="chip mono">{{ $borrowing->facility->code }}</span></div>
                 </div>
-
-                <div>
+                <div class="info-row">
                     <div class="detail-label">Lokasi</div>
-                    <div class="detail-value">{{ $borrowing->facility->location }}</div>
+                    <div class="detail-value is-plain">{{ $borrowing->facility->location }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="detail-label">Total Unit</div>
+                    <div class="detail-value is-plain">{{ $borrowing->facility->units }} unit</div>
                 </div>
             </div>
         </div>
 
         <div class="col-md-6">
             <div class="detail-card">
-                <div class="detail-icon">📅</div>
+                <div class="detail-icon">{!! $svg($icons['calendar']) !!}</div>
                 <h5 class="detail-section-title">Jadwal Peminjaman</h5>
 
-                <div class="mb-3">
-                    <div class="detail-label">Tanggal Mulai</div>
+                <div class="info-row">
+                    <div class="detail-label">Mulai</div>
                     <div class="detail-value">
-                        {{ $borrowing->start_at->format('d F Y, H:i') }} WIB
+                        {{ $fmtDate($borrowing->start_at) }}
+                        <span class="sub">Pukul {{ $borrowing->start_at->format('H:i') }} WIB</span>
                     </div>
                 </div>
-
-                <div class="mb-3">
-                    <div class="detail-label">Tanggal Selesai</div>
+                <div class="info-row">
+                    <div class="detail-label">Selesai</div>
                     <div class="detail-value">
-                        {{ $borrowing->end_at->format('d F Y, H:i') }} WIB
+                        {{ $fmtDate($borrowing->end_at) }}
+                        <span class="sub">Pukul {{ $borrowing->end_at->format('H:i') }} WIB</span>
                     </div>
                 </div>
-
-                <div>
-                    <div class="detail-label">Jumlah Unit</div>
-                    <div class="detail-value">{{ $borrowing->units }} unit</div>
+                <div class="info-row">
+                    <div class="detail-label">Durasi</div>
+                    <div class="detail-value is-plain">{{ $duration }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="detail-label">Unit Diminta</div>
+                    <div class="detail-value">
+                        {{ $borrowing->units }} unit
+                        @if($availableUnits !== null)
+                            <span class="chip {{ $availableUnits >= $borrowing->units ? 'ok' : 'bad' }} ms-2">
+                                Tersisa {{ $availableUnits }} unit pada jadwal ini
+                            </span>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="col-md-6">
             <div class="detail-card">
-                <div class="detail-icon">📝</div>
+                <div class="detail-icon">{!! $svg($icons['note']) !!}</div>
                 <h5 class="detail-section-title">Tujuan Peminjaman</h5>
 
-                <div class="detail-value" style="line-height:1.8;font-weight:500">
-                    {{ $borrowing->purpose }}
-                </div>
+                <div class="purpose-box">{{ $borrowing->purpose }}</div>
 
                 @if($borrowing->reject_reason)
                     <div class="alert alert-danger mt-3 mb-0">
@@ -368,6 +442,13 @@
         <div class="detail-card">
             <h5 class="detail-section-title">Tindakan Pengajuan</h5>
 
+            @if($availableUnits !== null && $availableUnits < $borrowing->units)
+                <div class="alert alert-warning">
+                    Unit pada jadwal ini tidak mencukupi ({{ $availableUnits }} tersisa, diminta {{ $borrowing->units }}).
+                    Sistem akan menolak persetujuan sampai bentrok jadwal teratasi.
+                </div>
+            @endif
+
             <div class="d-flex flex-wrap gap-2">
 
                 @if($isAdmin)
@@ -375,7 +456,7 @@
                         @csrf
                         <button class="btn btn-success detail-btn"
                                 onclick="return confirm('Setujui pengajuan peminjaman ini?')">
-                            ✓ Setujui Pengajuan
+                            Setujui Pengajuan
                         </button>
                     </form>
 

@@ -524,7 +524,7 @@
         </div>
 
         <div class="visual-content">
-            <span class="welcome-label">✦ BERGABUNG DENGAN SIMFAS</span>
+            <span class="welcome-label">BERGABUNG DENGAN SIMFAS</span>
 
             <h1>
                 Mulai Kelola
@@ -558,7 +558,7 @@
                     <circle cx="91" cy="83" r="15" fill="#fff" opacity=".8"/>
                     <circle cx="365" cy="75" r="10" fill="#fff" opacity=".8"/>
                 </svg>
-                <div class="glass-badge">✦ Akun Mahasiswa</div>
+                <div class="glass-badge">Akun Mahasiswa</div>
             </div>
         </div>
 
@@ -578,7 +578,7 @@
             @if ($errors->any())
                 <div class="error-message">
                     @foreach ($errors->all() as $error)
-                        <div>⚠ {{ $error }}</div>
+                        <div>{{ $error }}</div>
                     @endforeach
                 </div>
             @endif
@@ -679,7 +679,7 @@
             </div>
 
             <div class="info-note">
-                ✦ Pendaftaran melalui halaman ini akan membuat akun dengan akses
+                Pendaftaran melalui halaman ini akan membuat akun dengan akses
                 <strong>Mahasiswa</strong>. Hak akses lainnya dikelola oleh sistem.
             </div>
         </div>

@@ -54,7 +54,12 @@ class BorrowingController extends Controller {
 
         $borrowing->load(['user', 'facility']);
 
-        return view('borrowings.show', compact('borrowing'));
+        // Admin melihat sisa unit pada jadwal ini sebagai bahan keputusan.
+        $availableUnits = ($user->role === 'admin' && $borrowing->status === 'menunggu')
+            ? $this->svc->available($borrowing->facility, $borrowing->start_at, $borrowing->end_at, $borrowing->id)
+            : null;
+
+        return view('borrowings.show', compact('borrowing', 'availableUnits'));
     }
 
     public function create() { return view('borrowings.create', ['facilities'=>Facility::whereIn('status',['tersedia','dipinjam'])->orderBy('name')->get()]); }

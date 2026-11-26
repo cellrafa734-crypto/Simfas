@@ -25,15 +25,15 @@
         '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' . ($iconPaths[$name] ?? $iconPaths['bars']) . '</svg>'
     );
 
-    // Apakah grafik punya data? (bila semua nol, tampilkan keterangan kosong)
-    $hasBorrowingData = collect($monthlyBorrowings)->sum() > 0;
-    $hasFacilityData  = collect($facilityStatusValues)->sum() > 0;
+    $fmtRange = fn ($b) => $b->start_at->locale('id')->translatedFormat('d M Y, H:i') . ' - ' . $b->end_at->locale('id')->translatedFormat($b->start_at->isSameDay($b->end_at) ? 'H:i' : 'd M Y, H:i');
+    $facilityStatusText = ['pemeliharaan' => 'Pemeliharaan', 'tidak_dapat_digunakan' => 'Tidak dapat digunakan'];
 
     $statStyles = [
         'Total fasilitas' => ['icon' => 'building', 'color' => 'blue'],
         'Tersedia' => ['icon' => 'check', 'color' => 'green'],
         'Dalam pemeliharaan' => ['icon' => 'tools', 'color' => 'orange'],
         'Menunggu persetujuan' => ['icon' => 'clock', 'color' => 'purple'],
+        'Berlangsung hari ini' => ['icon' => 'activity', 'color' => 'teal'],
         'Total pengajuan' => ['icon' => 'clipboard', 'color' => 'navy'],
         'Pengajuan saya' => ['icon' => 'file', 'color' => 'blue'],
     ];
@@ -163,35 +163,27 @@
 
     .stat-card {
         position: relative;
+        display: flex;
+        align-items: center;
+        gap: 16px;
         height: 100%;
+        min-height: 96px;
         overflow: hidden;
-        padding: 19px;
+        padding: 18px 20px;
         border: 1px solid #e2e9f4;
         border-radius: 16px;
         background: #fff;
         box-shadow: 0 3px 12px rgba(10,31,68,.035);
-        transition: transform .25s ease, box-shadow .25s ease;
-    }
-
-    .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 25px rgba(10,31,68,.09);
-    }
-
-    .stat-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
     }
 
     .stat-icon {
         display: grid;
         place-items: center;
-        width: 43px;
-        height: 43px;
+        flex: none;
+        width: 48px;
+        height: 48px;
         border-radius: 12px;
-        font-size: 1.2rem;
+        font-size: 1.3rem;
     }
 
     .stat-icon.blue { color: #2563eb; background: #eff6ff; }
@@ -199,18 +191,20 @@
     .stat-icon.orange { color: #d97706; background: #fff7e8; }
     .stat-icon.purple { color: #7c3aed; background: #f4efff; }
     .stat-icon.navy { color: #0e2a5c; background: #eaf0fa; }
+    .stat-icon.teal { color: #0f8a8a; background: #e6f6f6; }
+
+    .stat-body { min-width: 0; }
 
     .stat-value {
-        margin-top: 17px;
         color: #0a1f44;
-        font-size: 2rem;
+        font-size: 1.85rem;
         font-weight: 800;
         line-height: 1;
         letter-spacing: -.04em;
     }
 
     .stat-label {
-        margin-top: 8px;
+        margin-top: 6px;
         color: #71829e;
         font-size: .8rem;
         font-weight: 600;
@@ -218,11 +212,11 @@
 
     .stat-indicator {
         position: absolute;
-        right: 0;
-        bottom: 0;
-        width: 65px;
-        height: 4px;
-        border-radius: 5px 0 0 0;
+        left: 0;
+        top: 18px;
+        bottom: 18px;
+        width: 4px;
+        border-radius: 0 4px 4px 0;
         background: #2563eb;
     }
 
@@ -230,6 +224,7 @@
     .stat-indicator.orange { background: #f59e0b; }
     .stat-indicator.purple { background: #8b5cf6; }
     .stat-indicator.navy { background: #0e2a5c; }
+    .stat-indicator.teal { background: #14b8b8; }
 
     /* PANEL */
 
@@ -253,13 +248,6 @@
         margin-top: 5px;
         color: #8291a9;
         font-size: .76rem;
-    }
-
-    .chart-container {
-        position: relative;
-        width: 100%;
-        height: 275px;
-        margin-top: 20px;
     }
 
     .table-dashboard {
@@ -305,6 +293,8 @@
     .status-ditolak { color: #991b1b; background: #fee2e2; }
     .status-dipinjam { color: #1d4ed8; background: #dbeafe; }
     .status-selesai { color: #475569; background: #e2e8f0; }
+    .status-pemeliharaan { color: #b45309; background: #fef3c7; }
+    .status-tidak_dapat_digunakan { color: #991b1b; background: #fee2e2; }
     .status-default { color: #475569; background: #f1f5f9; }
 
     .empty-state {
@@ -318,20 +308,6 @@
         margin: 0 auto 10px;
         font-size: 2rem;
         color: #b8c8df;
-    }
-
-    .chart-empty {
-        height: 275px;
-        margin-top: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        border: 1px dashed #d3deee;
-        border-radius: 12px;
-        background: #fafcff;
-        text-align: center;
-        padding: 20px;
     }
 
     .petugas-note {
@@ -367,13 +343,75 @@
         color: #0a1f44;
     }
 
+    /* DAFTAR OPERASIONAL */
+
+    .op-list { margin: 16px 0 0; padding: 0; list-style: none; }
+
+    .op-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 13px 0;
+        border-top: 1px solid #edf1f7;
+    }
+
+    .op-item:first-child { border-top: 0; padding-top: 0; }
+    .op-item:last-child { padding-bottom: 0; }
+    .op-main { min-width: 0; }
+
+    .op-title {
+        color: #18345e;
+        font-size: .86rem;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+
+    .op-sub {
+        margin-top: 2px;
+        color: #8291a9;
+        font-size: .76rem;
+        overflow-wrap: anywhere;
+    }
+
+    .op-meta {
+        flex: none;
+        text-align: right;
+        color: #475569;
+        font-size: .76rem;
+        font-weight: 600;
+    }
+
+    .op-action {
+        flex: none;
+        padding: 6px 13px;
+        border-radius: 9px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: .76rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .op-action:hover { background: #dbeafe; color: #1e40af; }
+
+    .count-badge {
+        padding: 4px 10px;
+        border-radius: 30px;
+        background: #f4efff;
+        color: #6d28d9;
+        font-size: .72rem;
+        font-weight: 700;
+    }
+
     @media (max-width: 575px) {
+        .op-item { flex-wrap: wrap; }
+        .op-meta { text-align: left; }
         .welcome-panel { padding: 24px 21px; }
         .welcome-decoration { right: 10px; font-size: 4rem; opacity: .5; }
         .stat-card { padding: 16px; }
-        .stat-value { font-size: 1.7rem; }
+        .stat-value { font-size: 1.6rem; }
         .dashboard-panel { padding: 16px; }
-        .chart-container, .chart-empty { height: 240px; }
     }
 
     /* Tabel dashboard: lebih ringkas di layar kecil (menimpa aturan umum layout) */
@@ -399,8 +437,8 @@
 
             <p class="welcome-description">
                 @if($isAdmin)
-                    Selamat bekerja. Pantau pengelolaan fasilitas,
-                    pengajuan peminjaman, dan aktivitas sistem kampus
+                    Selamat bekerja. Pantau pengajuan yang perlu diputuskan,
+                    jadwal peminjaman, dan kondisi fasilitas kampus.
                 @else
                     Selamat datang di Sistem Informasi Manajemen Fasilitas Kampus.
                     Temukan fasilitas dan pantau pengajuan peminjamanmu dengan mudah.
@@ -432,17 +470,16 @@
                 ];
             @endphp
 
-            <div class="col-6 col-xl-4">
+            <div class="col-12 col-sm-6 col-lg-4">
                 <div class="stat-card">
-                    <div class="stat-top">
-                        <div class="stat-icon {{ $style['color'] }}">
-                            {!! $icon($style['icon']) !!}
-                        </div>
-                        <span class="text-secondary opacity-50">{!! $icon('arrow-up') !!}</span>
+                    <div class="stat-icon {{ $style['color'] }}">
+                        {!! $icon($style['icon']) !!}
                     </div>
 
-                    <div class="stat-value">{{ number_format($value) }}</div>
-                    <div class="stat-label">{{ $label }}</div>
+                    <div class="stat-body">
+                        <div class="stat-value">{{ number_format($value) }}</div>
+                        <div class="stat-label">{{ $label }}</div>
+                    </div>
 
                     <div class="stat-indicator {{ $style['color'] }}"></div>
                 </div>
@@ -450,58 +487,75 @@
         @endforeach
     </div>
 
-    {{-- GRAFIK --}}
-    <div class="section-heading mt-4">
-        <div>
-            <h5>Analisis Aktivitas</h5>
-            <p class="section-caption">Visualisasi data peminjaman dan fasilitas</p>
+    @if($isAdmin)
+        {{-- PERLU DIPUTUSKAN & JADWAL TERDEKAT --}}
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-xl-7">
+                <div class="dashboard-panel">
+                    <div class="d-flex align-items-start justify-content-between gap-2">
+                        <div>
+                            <h6 class="panel-title">Perlu Diputuskan</h6>
+                            <p class="panel-subtitle mb-0">Pengajuan menunggu persetujuan, yang terlama di atas</p>
+                        </div>
+                        @if(($stats['Menunggu persetujuan'] ?? 0) > 0)
+                            <span class="count-badge">{{ $stats['Menunggu persetujuan'] }} menunggu</span>
+                        @endif
+                    </div>
+
+                    @forelse($pendingQueue as $b)
+                        @if($loop->first)<ul class="op-list">@endif
+                        <li class="op-item">
+                            <div class="op-main">
+                                <div class="op-title">{{ $b->user->name ?? 'Pengguna' }} <span class="text-secondary fw-normal">- {{ $b->facility->name ?? 'Fasilitas' }}, {{ $b->units }} unit</span></div>
+                                <div class="op-sub">{{ $fmtRange($b) }}</div>
+                            </div>
+                            <a href="{{ route('borrowings.show', $b) }}" class="op-action">Tinjau</a>
+                        </li>
+                        @if($loop->last)</ul>@endif
+                    @empty
+                        <div class="empty-state">
+                            {!! $icon('check') !!}
+                            <div class="fw-semibold">Tidak ada pengajuan yang menunggu</div>
+                            <small>Semua pengajuan sudah diproses.</small>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="col-12 col-xl-5">
+                <div class="dashboard-panel">
+                    <h6 class="panel-title">Jadwal Terdekat</h6>
+                    <p class="panel-subtitle mb-0">Peminjaman disetujui yang akan atau sedang berlangsung</p>
+
+                    @forelse($upcomingSchedule as $b)
+                        @if($loop->first)<ul class="op-list">@endif
+                        <li class="op-item">
+                            <div class="op-main">
+                                <div class="op-title">{{ $b->facility->name ?? 'Fasilitas' }}</div>
+                                <div class="op-sub">{{ $b->user->name ?? 'Pengguna' }}, {{ $b->units }} unit</div>
+                            </div>
+                            <div class="op-meta">
+                                {{ $b->start_at->locale('id')->translatedFormat('d M Y') }}<br>
+                                <span class="text-secondary fw-normal">{{ $b->start_at->format('H:i') }} - {{ $b->end_at->format('H:i') }}</span>
+                            </div>
+                        </li>
+                        @if($loop->last)</ul>@endif
+                    @empty
+                        <div class="empty-state">
+                            {!! $icon('inbox') !!}
+                            <div class="fw-semibold">Belum ada jadwal mendatang</div>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
         </div>
-    </div>
+    @endif
 
     <div class="row g-3 mb-4">
-
-        <div class="col-12 col-xl-7">
-            <div class="dashboard-panel">
-                <h6 class="panel-title">Statistik Peminjaman</h6>
-                <p class="panel-subtitle">Jumlah pengajuan berdasarkan bulan tahun ini</p>
-
-                @if($hasBorrowingData)
-                    <div class="chart-container">
-                        <canvas id="borrowingChart"></canvas>
-                    </div>
-                @else
-                    <div class="chart-empty empty-state">
-                        {!! $icon('bars') !!}
-                        <div class="fw-semibold">Belum ada data peminjaman tahun ini</div>
-                        <small>Grafik akan muncul setelah ada pengajuan peminjaman.</small>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        <div class="col-12 col-xl-5">
-            <div class="dashboard-panel">
-                <h6 class="panel-title">Status Fasilitas</h6>
-                <p class="panel-subtitle">Distribusi kondisi fasilitas kampus</p>
-
-                @if($hasFacilityData)
-                    <div class="chart-container">
-                        <canvas id="facilityChart"></canvas>
-                    </div>
-                @else
-                    <div class="chart-empty empty-state">
-                        {!! $icon('pie') !!}
-                        <div class="fw-semibold">Belum ada data fasilitas</div>
-                        <small>Grafik akan muncul setelah fasilitas ditambahkan.</small>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-    </div>
-
+    @if($isAdmin)
+    <div class="col-12 col-xl-7">
     {{-- AKTIVITAS TERBARU --}}
-    <div class="dashboard-panel mb-4">
+    <div class="dashboard-panel">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
             <div>
                 <h6 class="panel-title">Aktivitas Peminjaman Terbaru</h6>
@@ -592,6 +646,40 @@
         @endif
     </div>
 
+    </div>
+    @endif
+
+    {{-- FASILITAS TIDAK TERSEDIA --}}
+    <div class="col-12 {{ $isAdmin ? 'col-xl-5' : '' }}">
+        <div class="dashboard-panel">
+            <div class="d-flex align-items-start justify-content-between gap-2">
+                <div>
+                    <h6 class="panel-title">Fasilitas Tidak Tersedia</h6>
+                    <p class="panel-subtitle mb-0">Sedang pemeliharaan atau tidak dapat digunakan</p>
+                </div>
+                <a href="/facilities" class="dashboard-link">Kelola</a>
+            </div>
+
+            @forelse($attentionFacilities as $f)
+                @if($loop->first)<ul class="op-list">@endif
+                <li class="op-item">
+                    <div class="op-main">
+                        <div class="op-title">{{ $f->name }}</div>
+                        <div class="op-sub">{{ $f->code }}, {{ $f->location }}</div>
+                    </div>
+                    <span class="status-pill status-{{ $f->status }}">{{ $facilityStatusText[$f->status] ?? ucfirst($f->status) }}</span>
+                </li>
+                @if($loop->last)</ul>@endif
+            @empty
+                <div class="empty-state">
+                    {!! $icon('check') !!}
+                    <div class="fw-semibold">Semua fasilitas dapat digunakan</div>
+                </div>
+            @endforelse
+        </div>
+    </div>
+    </div>
+
     @if($isPetugas)
         <div class="alert alert-info petugas-note" role="status">
             <div class="note-text">
@@ -603,100 +691,3 @@
     @endif
 
 </div>
-
-{{-- CHART JS --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    const borrowingCanvas = document.getElementById('borrowingChart');
-    const facilityCanvas = document.getElementById('facilityChart');
-
-    const chartFont = {
-        family: 'Inter, sans-serif'
-    };
-
-    if (borrowingCanvas) {
-        new Chart(borrowingCanvas, {
-            type: 'line',
-            data: {
-                labels: @json($monthlyLabels),
-                datasets: [{
-                    label: 'Jumlah Peminjaman',
-                    data: @json($monthlyBorrowings),
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.10)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: '#2563eb',
-                    pointBorderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { precision: 0, font: chartFont },
-                        grid: { color: '#edf1f7' }
-                    },
-                    x: {
-                        ticks: { font: chartFont },
-                        grid: { display: false }
-                    }
-                }
-            }
-        });
-    }
-
-    if (facilityCanvas) {
-        new Chart(facilityCanvas, {
-            type: 'doughnut',
-            data: {
-                labels: @json($facilityStatusLabels),
-                datasets: [{
-                    data: @json($facilityStatusValues),
-                    backgroundColor: [
-                        '#2563eb',
-                        '#60a5fa',
-                        '#f59e0b',
-                        '#ef4444'
-                    ],
-                    borderWidth: 3,
-                    borderColor: '#ffffff',
-                    hoverOffset: 7
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '68%',
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 17,
-                            font: {
-                                family: 'Inter, sans-serif',
-                                size: 11
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-});
-</script>
-

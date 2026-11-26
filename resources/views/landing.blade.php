@@ -1664,7 +1664,7 @@
     <a href="/" class="logo">SIMFAS<span>.</span> Kampus</a>
 
     <button class="menu-toggle" id="menuToggle" aria-label="Buka menu" aria-expanded="false">
-        ☰
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
     </button>
 
     <div class="nav-links" id="navLinks">
@@ -1692,7 +1692,7 @@
 
     <div class="hero-content">
         <div class="hero-tag">
-            ✦ SISTEM INFORMASI FASILITAS KAMPUS
+            SISTEM INFORMASI FASILITAS KAMPUS
         </div>
 
         <h1>
@@ -1716,7 +1716,7 @@
         </div>
 
         <div class="hero-note">
-            ✧ Satu sistem untuk pengelolaan fasilitas kampus yang lebih terarah.
+            Satu sistem untuk pengelolaan fasilitas kampus yang lebih terarah.
         </div>
     </div>
 </section>
@@ -1764,7 +1764,7 @@
                             </div>
                         </div>
 
-                        <span class="dashboard-status">● Aktif</span>
+                        <span class="dashboard-status">Aktif</span>
                     </div>
 
                     <div class="dashboard-title">
@@ -1775,7 +1775,7 @@
                     <div class="dashboard-stats">
 
                         <div class="mini-stat">
-                            <span class="mini-stat-icon blue">▦</span>
+                            <span class="mini-stat-icon blue"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span>
                             <div>
                                 <strong>04</strong>
                                 <small>Total Fasilitas</small>
@@ -1783,7 +1783,7 @@
                         </div>
 
                         <div class="mini-stat">
-                            <span class="mini-stat-icon green">✓</span>
+                            <span class="mini-stat-icon green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg></span>
                             <div>
                                 <strong>04</strong>
                                 <small>Tersedia</small>
@@ -1807,7 +1807,7 @@
 
                 <!-- Floating badge -->
                 <div class="floating-badge" data-tilt data-tilt-speed="500">
-                    <span class="badge-icon">✦</span>
+                    <span class="badge-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2 4 6v6c0 5 3.5 8.5 8 10 4.5-1.5 8-5 8-10V6Z"/><path d="m9 12 2 2 4-4"/></svg></span>
                     <div>
                         <strong>Terintegrasi</strong>
                         <small>Pengelolaan lebih mudah</small>
@@ -1847,7 +1847,7 @@
             <div class="about-benefits">
 
                 <div class="benefit-item">
-                    <div class="benefit-check">✓</div>
+                    <div class="benefit-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg></div>
                     <div>
                         <strong>Informasi fasilitas lebih terorganisir</strong>
                         <small>Data fasilitas tersusun secara lebih sistematis.</small>
@@ -1855,7 +1855,7 @@
                 </div>
 
                 <div class="benefit-item">
-                    <div class="benefit-check">✓</div>
+                    <div class="benefit-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg></div>
                     <div>
                         <strong>Pengajuan peminjaman lebih mudah</strong>
                         <small>Proses pengajuan dapat dilakukan melalui sistem.</small>
@@ -1863,7 +1863,7 @@
                 </div>
 
                 <div class="benefit-item">
-                    <div class="benefit-check">✓</div>
+                    <div class="benefit-check"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg></div>
                     <div>
                         <strong>Pengelolaan prioritas pemeliharaan</strong>
                         <small>Membantu menentukan fasilitas yang perlu diperhatikan.</small>
@@ -2162,7 +2162,7 @@
     menuToggle.addEventListener('click', () => {
         const isOpen = navLinks.classList.toggle('open');
         menuToggle.setAttribute('aria-expanded', isOpen);
-        menuToggle.textContent = isOpen ? '✕' : '☰';
+        menuToggle.innerHTML = isOpen ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
     });
 
     // Tutup menu setelah memilih navigasi
@@ -2170,7 +2170,7 @@
         link.addEventListener('click', () => {
             navLinks.classList.remove('open');
             menuToggle.setAttribute('aria-expanded', 'false');
-            menuToggle.textContent = '☰';
+            menuToggle.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
         });
     });
 
