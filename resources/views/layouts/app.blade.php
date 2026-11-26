@@ -42,6 +42,46 @@
 
     // Penentu menu aktif.
     $cur = fn (string ...$patterns) => request()->is(...$patterns);
+
+    // Struktur menu sidebar. Item dengan 'children' tampil sebagai grup yang bisa dibuka-tutup;
+    // hak akses per peran tetap sama seperti sebelumnya.
+    $navSections = [];
+    if ($user) {
+        $icon = [
+            'dashboard'  => '<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/>',
+            'facilities' => '<path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5M9 9h.01M15 9h.01M9 12h.01M15 12h.01"/>',
+            'borrowings' => '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h3M8 17h7"/>',
+            'saw'        => '<path d="M4 19V5M4 19h17"/><path d="m7 15 4-4 3 2 6-7"/>',
+        ];
+
+        $main = [
+            ['label' => 'Dashboard', 'href' => '/dashboard', 'icon' => $icon['dashboard'], 'active' => $cur('dashboard')],
+        ];
+
+        $main[] = $user->role === 'admin'
+            ? ['label' => 'Fasilitas', 'icon' => $icon['facilities'], 'children' => [
+                ['label' => 'Daftar Fasilitas',  'href' => '/facilities',        'active' => $cur('facilities')],
+                ['label' => 'Tambah Fasilitas',  'href' => '/facilities/create', 'active' => $cur('facilities/create', 'facilities/*/edit')],
+            ]]
+            : ['label' => 'Fasilitas', 'href' => '/facilities', 'icon' => $icon['facilities'], 'active' => $cur('facilities*')];
+
+        if (in_array($user->role, ['mahasiswa', 'organisasi'])) {
+            $main[] = ['label' => 'Peminjaman', 'icon' => $icon['borrowings'], 'children' => [
+                ['label' => 'Daftar Peminjaman',  'href' => '/borrowings',        'active' => $cur('borrowings') || ($cur('borrowings/*') && ! $cur('borrowings/create'))],
+                ['label' => 'Ajukan Peminjaman',  'href' => '/borrowings/create', 'active' => $cur('borrowings/create')],
+            ]];
+        } elseif ($user->role === 'admin') {
+            $main[] = ['label' => 'Peminjaman', 'href' => '/borrowings', 'icon' => $icon['borrowings'], 'active' => $cur('borrowings*')];
+        }
+
+        $navSections[] = ['title' => 'Menu Utama', 'items' => $main];
+
+        if ($user->role === 'admin') {
+            $navSections[] = ['title' => 'Administrator', 'items' => [
+                ['label' => 'Prioritas SAW', 'href' => '/saw', 'icon' => $icon['saw'], 'active' => $cur('saw*')],
+            ]];
+        }
+    }
 @endphp
 <!doctype html>
 <html lang="id">
@@ -50,6 +90,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#0a1f44">
     <title>{{ $pageTitle }} — SIMFAS Kampus</title>
+    <script>try { if (localStorage.getItem('simfasSidebar') === 'collapsed') document.documentElement.classList.add('sb-collapsed'); } catch (e) {}</script>
     <link rel="icon" href="{{ asset('favicon.ico') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -64,24 +105,24 @@
            Radius: kontainer (card, modal, tabel) = 16px | kontrol (input, tombol) = 12px
            ===================================================================== */
         :root {
-            --navy-950: #183e60;
-            --navy-900: #183e60;
-            --navy-800: #236da9;
-            --navy-700: #368bd0;
+            --navy-950: #06142e;
+            --navy-900: #0a1f44;
+            --navy-800: #0e2a5c;
+            --navy-700: #143672;
 
-            --blue-700: #236da9;
-            --blue-600: #368bd0;
-            --blue-500: #368bd0;
-            --blue-400: #78b5e8;
-            --blue-100: #d9edfc;
-            --blue-50:  #eaf5ff;
+            --blue-700: #1d4ed8;
+            --blue-600: #2563eb;
+            --blue-500: #3b82f6;
+            --blue-400: #60a5fa;
+            --blue-100: #dbeafe;
+            --blue-50:  #eff6ff;
 
-            --ink:      #183e60;
-            --ink-soft: #435b70;
-            --muted:    #7890a8;
-            --line:     #dceaf5;
+            --ink:      #10244a;
+            --ink-soft: #3d5378;
+            --muted:    #6c7f9d;
+            --line:     #e2e9f4;
             --surface:  #ffffff;
-            --bg:       #f4f9fd;
+            --bg:       #f3f6fb;
 
             --radius-lg: 16px;   /* rounded-2xl : card, modal, tabel          */
             --radius-md: 12px;   /* rounded-xl  : input, tombol, alert, menu  */
@@ -183,13 +224,14 @@
             display: flex;
             flex-direction: column;
             padding: 22px 16px max(18px, env(safe-area-inset-bottom));
-            color: #435b70;
+            color: #cfe0fb;
             background:
                 radial-gradient(120% 55% at 0% 0%, rgba(59, 130, 246, .30), transparent 60%),
                 linear-gradient(180deg, var(--navy-900) 0%, var(--navy-950) 100%);
             box-shadow: 6px 0 30px rgba(6, 20, 46, .18);
-            transition: transform .38s var(--ease), visibility 0s linear 0s;
+            transition: transform .38s var(--ease), width .38s var(--ease), visibility 0s linear 0s;
         }
+        .simfas-sidebar.is-dragging { transition: none !important; }
 
         .sidebar-brand {
             display: flex;
@@ -197,7 +239,7 @@
             gap: 12px;
             padding: 2px 6px 20px;
             margin-bottom: 4px;
-            border-bottom: 1px solid #e3edf5;
+            border-bottom: 1px solid rgba(255, 255, 255, .09);
         }
 
         .brand-link {
@@ -250,7 +292,7 @@
             letter-spacing: .16em;
             white-space: nowrap;
             text-transform: uppercase;
-            color: #7890a8;
+            color: rgba(170, 196, 238, .65);
         }
 
         .sidebar-close {
@@ -261,7 +303,7 @@
             place-items: center;
             border: 0;
             border-radius: var(--radius-sm);
-            background: #eaf5ff;
+            background: rgba(255, 255, 255, .08);
             color: #fff;
             cursor: pointer;
             transition: background-color .2s;
@@ -270,6 +312,7 @@
         .sidebar-close svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
 
         .sidebar-nav {
+            position: relative;
             flex: 1;
             min-height: 0;
             overflow-y: auto;
@@ -285,12 +328,15 @@
             font-weight: 700;
             letter-spacing: .15em;
             text-transform: uppercase;
-            color: #8aa0b5;
+            color: rgba(160, 186, 228, .55);
         }
-        .sidebar-brand + .sidebar-nav .nav-caption:first-child { margin-top: 18px; }
+        .sidebar-nav > .nav-caption:first-of-type { margin-top: 18px; }
+
+        .brand-text { min-width: 0; }
 
         .side-link {
             position: relative;
+            z-index: 1;
             display: flex;
             align-items: center;
             gap: 12px;
@@ -300,7 +346,7 @@
             border: 0;
             border-radius: var(--radius-md);
             background: transparent;
-            color: #526b82;
+            color: rgba(214, 227, 250, .78);
             font-family: inherit;
             font-size: .875rem;
             font-weight: 600;
@@ -308,7 +354,15 @@
             text-align: left;
             text-decoration: none;
             cursor: pointer;
-            transition: background-color .25s var(--ease), color .25s, transform .25s var(--ease), box-shadow .25s;
+            transition: color .25s, padding .38s var(--ease), gap .38s var(--ease);
+        }
+
+        .side-link .label {
+            min-width: 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            transition: opacity .2s;
         }
 
         .nav-icon {
@@ -323,37 +377,89 @@
             transition: transform .25s var(--ease);
         }
 
-        .side-link:hover {
-            color: #fff;
-            background: #eaf5ff;
-            transform: translateX(3px);
-        }
+        .side-link:hover,
+        .side-link.active,
+        .side-link.has-active { color: #fff; }
         .side-link:hover .nav-icon { transform: scale(1.12); }
 
-        /* Menu aktif: latar biru + penanda di tepi kiri sidebar */
-        .side-link.active,
-        .side-link.active:hover {
-            color: #fff;
-            background: linear-gradient(100deg, #368bd0, #236da9);
-            box-shadow: 0 10px 22px rgba(37, 99, 235, .38), inset 0 1px 0 rgba(255, 255, 255, .22);
-            transform: none;
+        /* Pil bayangan: pil hover mengikuti kursor, pil aktif meluncur antar menu */
+        .nav-pill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+            width: 0;
+            height: 0;
+            border-radius: var(--radius-md);
+            opacity: 0;
+            pointer-events: none;
+            will-change: transform, width, height;
+            transition: transform .38s var(--ease), width .38s var(--ease), height .38s var(--ease), opacity .25s;
         }
-        .side-link.active::before {
+        .nav-pill.is-sync { transition: none; }
+        .nav-pill-hover { background: rgba(255, 255, 255, .09); }
+        .nav-pill-active {
+            background: linear-gradient(100deg, var(--blue-500), var(--blue-700));
+            box-shadow: 0 10px 22px rgba(37, 99, 235, .38), inset 0 1px 0 rgba(255, 255, 255, .22);
+        }
+
+        /* Tanpa JavaScript: menu aktif tetap diberi latar sendiri */
+        .sidebar-nav:not(.has-pills) .side-link.active {
+            background: linear-gradient(100deg, var(--blue-500), var(--blue-700));
+            box-shadow: 0 10px 22px rgba(37, 99, 235, .38), inset 0 1px 0 rgba(255, 255, 255, .22);
+        }
+
+        /* Grup menu bersarang */
+        .nav-chevron {
+            width: 16px;
+            height: 16px;
+            margin-left: auto;
+            flex: none;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform .3s var(--ease), opacity .2s;
+        }
+        .nav-group.is-open > .nav-parent .nav-chevron { transform: rotate(180deg); }
+
+        .nav-children {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows .32s var(--ease);
+        }
+        .nav-group.is-open > .nav-children { grid-template-rows: 1fr; }
+
+        .nav-children-inner {
+            position: relative;
+            min-height: 0;
+            overflow: hidden;
+            visibility: hidden;
+            transition: visibility 0s linear .32s;
+        }
+        .nav-group.is-open .nav-children-inner { visibility: visible; transition-delay: 0s; }
+        .nav-children-inner::before {
             content: "";
             position: absolute;
-            left: -16px;
-            top: 22%;
-            width: 4px;
-            height: 56%;
-            border-radius: 0 6px 6px 0;
-            background: var(--blue-400);
-            box-shadow: 0 0 12px rgba(96, 165, 250, .8);
+            left: 23px;
+            top: 0;
+            bottom: 6px;
+            z-index: -1;
+            width: 1px;
+            background: rgba(255, 255, 255, .12);
+        }
+
+        .side-sub {
+            padding: 9px 14px 9px 46px;
+            font-size: .82rem;
+            font-weight: 500;
         }
 
         .sidebar-footer {
             margin-top: 12px;
             padding-top: 14px;
-            border-top: 1px solid #e3edf5;
+            border-top: 1px solid rgba(255, 255, 255, .09);
         }
 
         .sidebar-user {
@@ -363,15 +469,55 @@
             margin-bottom: 10px;
             padding: 10px 12px;
             border-radius: var(--radius-md);
-            background: #f4f9fd;
+            background: rgba(255, 255, 255, .06);
         }
         .sidebar-user .user-avatar { width: 36px; height: 36px; font-size: .8rem; box-shadow: 0 0 0 2px rgba(255, 255, 255, .22); }
         .sidebar-user-name { font-size: .8rem; font-weight: 700; color: #fff; line-height: 1.2; overflow-wrap: anywhere; }
-        .sidebar-user-role { font-size: .7rem; color: #7890a8; margin-top: 2px; }
+        .sidebar-user-role { font-size: .7rem; color: rgba(170, 196, 238, .7); margin-top: 2px; }
 
-        .side-link.logout { margin-bottom: 0; color: rgba(214, 227, 250, .85); }
-        .side-link.logout:hover { background: rgba(255, 255, 255, .1); }
+        .side-link.logout { color: rgba(214, 227, 250, .85); }
+        .side-link.logout:hover,
+        .side-link.collapse-btn:hover { background: rgba(255, 255, 255, .1); }
         .side-link.logout:hover .nav-icon { transform: translateX(3px); }
+
+        /* Tombol ciutkan menu (hanya desktop) */
+        .side-link.collapse-btn { display: none; margin-bottom: 0; color: rgba(190, 208, 240, .7); }
+        .collapse-btn .nav-icon { transition: transform .38s var(--ease); }
+        .collapse-btn:hover .nav-icon { transform: none; }
+        .kbd {
+            margin-left: auto;
+            padding: 2px 7px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, .1);
+            color: rgba(214, 227, 250, .8);
+            font-family: inherit;
+            font-size: .65rem;
+            font-weight: 700;
+            letter-spacing: .02em;
+            white-space: nowrap;
+        }
+
+        /* Tooltip untuk mode ikon */
+        .nav-tooltip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1100;
+            padding: 7px 12px;
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: var(--radius-sm);
+            background: var(--navy-950);
+            color: #fff;
+            font-size: .78rem;
+            font-weight: 600;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            box-shadow: var(--shadow-md);
+            transform: translate(-6px, -50%);
+            transition: opacity .15s, transform .2s var(--ease);
+        }
+        .nav-tooltip.show { opacity: 1; transform: translate(0, -50%); }
 
         .sidebar-overlay {
             position: fixed;
@@ -389,6 +535,7 @@
             visibility: visible;
             transition-delay: 0s;
         }
+        .sidebar-overlay.is-dragging { visibility: visible; transition: none; }
 
         /* =====================================================================
            4. AREA UTAMA + HEADER
@@ -399,7 +546,7 @@
             display: flex;
             flex-direction: column;
         }
-        .simfas-main.has-sidebar { margin-left: var(--sidebar-w); }
+        .simfas-main.has-sidebar { margin-left: var(--sidebar-w); transition: margin-left .38s var(--ease); }
 
         .top-header {
             position: sticky;
@@ -839,10 +986,40 @@
             }
         }
 
+        /* Desktop: mode ikon (sidebar diciutkan) */
+        @media (min-width: 992px) {
+            html.sb-collapsed { --sidebar-w: 84px; }
+
+            .side-link.collapse-btn { display: flex; }
+            html.sb-collapsed .collapse-btn .nav-icon { transform: rotate(180deg); }
+
+            html.sb-collapsed .brand-text,
+            html.sb-collapsed .nav-children,
+            html.sb-collapsed .nav-chevron,
+            html.sb-collapsed .kbd { display: none; }
+
+            html.sb-collapsed .sidebar-brand { justify-content: center; padding-left: 0; padding-right: 0; }
+            html.sb-collapsed .brand-link { flex: none; }
+
+            html.sb-collapsed .nav-caption {
+                height: 1px;
+                margin: 16px 12px 14px;
+                overflow: hidden;
+                background: rgba(255, 255, 255, .1);
+                color: transparent;
+                font-size: 0;
+            }
+            html.sb-collapsed .sidebar-nav > .nav-caption:first-of-type { margin-top: 20px; }
+
+            html.sb-collapsed .side-link { justify-content: center; gap: 0; padding-left: 0; padding-right: 0; }
+            html.sb-collapsed .side-link .label { width: 0; opacity: 0; }
+        }
+
         /* Tablet & HP: sidebar menjadi drawer */
         @media (max-width: 991.98px) {
             .simfas-sidebar {
                 width: min(300px, 86vw);
+                touch-action: pan-y;
                 transform: translateX(-105%);
                 visibility: hidden;
                 /* visibility baru disembunyikan setelah animasi geser selesai */
@@ -856,6 +1033,8 @@
 
             .sidebar-close { display: grid; }
             .sidebar-user { display: flex; }
+            .side-link.logout { margin-bottom: 0; }
+            .nav-tooltip { display: none; }
             .simfas-main.has-sidebar { margin-left: 0; }
             .mobile-menu-btn { display: grid; }
 
@@ -927,7 +1106,7 @@
                     <path d="M3 21h18"/>
                 </svg>
             </span>
-            <span>
+            <span class="brand-text">
                 <span class="brand-name">SIMFAS Kampus</span>
                 <span class="brand-sub">Manajemen Fasilitas</span>
             </span>
@@ -937,57 +1116,54 @@
         </button>
     </div>
 
-    <nav class="sidebar-nav" aria-label="Menu">
+    <nav class="sidebar-nav" id="sidebarNav" aria-label="Menu">
+        <span class="nav-pill nav-pill-hover" id="navPillHover" aria-hidden="true"></span>
+        <span class="nav-pill nav-pill-active" id="navPillActive" aria-hidden="true"></span>
 
-        <div class="nav-caption">Menu Utama</div>
+        @foreach($navSections as $section)
+            <div class="nav-caption"><span>{{ $section['title'] }}</span></div>
 
-        <a href="/dashboard"
-           class="side-link {{ $cur('dashboard') ? 'active' : '' }}"
-           @if($cur('dashboard')) aria-current="page" @endif>
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="3" y="3" width="8" height="8" rx="2"/>
-                <rect x="13" y="3" width="8" height="5" rx="2"/>
-                <rect x="13" y="10" width="8" height="11" rx="2"/>
-                <rect x="3" y="13" width="8" height="8" rx="2"/>
-            </svg>
-            <span>Dashboard</span>
-        </a>
-
-        <a href="/facilities"
-           class="side-link {{ $cur('facilities*') ? 'active' : '' }}"
-           @if($cur('facilities*')) aria-current="page" @endif>
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 21h18M5 21V7l7-4 7 4v14"/>
-                <path d="M9 21v-5h6v5M9 9h.01M15 9h.01M9 12h.01M15 12h.01"/>
-            </svg>
-            <span>Fasilitas</span>
-        </a>
-
-        @if(in_array($user->role, ['admin', 'mahasiswa', 'organisasi']))
-        <a href="/borrowings"
-           class="side-link {{ $cur('borrowings*') ? 'active' : '' }}"
-           @if($cur('borrowings*')) aria-current="page" @endif>
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="17" rx="2"/>
-                <path d="M16 2v4M8 2v4M3 10h18M8 14h3M8 17h7"/>
-            </svg>
-            <span>Peminjaman</span>
-        </a>
-        @endif
-
-        @if($user->role === 'admin')
-        <div class="nav-caption">Administrator</div>
-
-        <a href="/saw"
-           class="side-link {{ $cur('saw*') ? 'active' : '' }}"
-           @if($cur('saw*')) aria-current="page" @endif>
-            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M4 19V5M4 19h17"/>
-                <path d="m7 15 4-4 3 2 6-7"/>
-            </svg>
-            <span>Prioritas SAW</span>
-        </a>
-        @endif
+            @foreach($section['items'] as $item)
+                @if(empty($item['children']))
+                    <a href="{{ $item['href'] }}"
+                       class="side-link {{ $item['active'] ? 'active' : '' }}"
+                       data-nav-key="{{ $item['href'] }}"
+                       data-tip="{{ $item['label'] }}"
+                       @if($item['active']) aria-current="page" @endif>
+                        <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">{!! $item['icon'] !!}</svg>
+                        <span class="label">{{ $item['label'] }}</span>
+                    </a>
+                @else
+                    @php
+                        $groupActive = collect($item['children'])->contains('active', true);
+                        $groupId = 'navGroup-'.\Illuminate\Support\Str::slug($item['label']);
+                    @endphp
+                    <div class="nav-group {{ $groupActive ? 'is-open' : '' }}">
+                        <button type="button"
+                                class="side-link nav-parent {{ $groupActive ? 'has-active' : '' }}"
+                                aria-expanded="{{ $groupActive ? 'true' : 'false' }}"
+                                aria-controls="{{ $groupId }}"
+                                data-tip="{{ $item['label'] }}">
+                            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">{!! $item['icon'] !!}</svg>
+                            <span class="label">{{ $item['label'] }}</span>
+                            <svg class="nav-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <div class="nav-children" id="{{ $groupId }}">
+                            <div class="nav-children-inner">
+                                @foreach($item['children'] as $child)
+                                    <a href="{{ $child['href'] }}"
+                                       class="side-link side-sub {{ $child['active'] ? 'active' : '' }}"
+                                       data-nav-key="{{ $child['href'] }}"
+                                       @if($child['active']) aria-current="page" @endif>
+                                        <span class="label">{{ $child['label'] }}</span>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endforeach
+        @endforeach
     </nav>
 
     <div class="sidebar-footer">
@@ -1002,18 +1178,26 @@
 
         <form method="POST" action="/logout">
             @csrf
-            <button type="submit" class="side-link logout">
+            <button type="submit" class="side-link logout" data-tip="Keluar">
                 <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M10 17l5-5-5-5M15 12H3"/>
                     <path d="M12 3h7a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-7"/>
                 </svg>
-                <span>Keluar</span>
+                <span class="label">Keluar</span>
             </button>
         </form>
+
+        <button type="button" class="side-link collapse-btn" id="sidebarCollapse"
+                aria-pressed="false" aria-controls="simfasSidebar" data-tip="Perluas menu">
+            <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m11 17-5-5 5-5M18 17l-5-5 5-5"/></svg>
+            <span class="label">Ciutkan menu</span>
+            <kbd class="kbd" data-kbd>Ctrl B</kbd>
+        </button>
     </div>
 </aside>
 
 <div class="sidebar-overlay" id="sidebarOverlay" aria-hidden="true"></div>
+<div class="nav-tooltip" id="navTooltip" role="tooltip"></div>
 @endauth
 
 {{-- ===================== AREA UTAMA ===================== --}}
@@ -1091,12 +1275,30 @@
         el.textContent = todayText;
     });
 
-    /* ---------- Sidebar drawer (layar kecil) ---------- */
+    /* ---------- Sidebar: drawer, mode ikon, pil hover/aktif ---------- */
+    var root = document.documentElement;
     var sidebar = document.getElementById('simfasSidebar');
     var overlay = document.getElementById('sidebarOverlay');
     var openBtn = document.getElementById('mobileMenuBtn');
     var closeBtn = document.getElementById('sidebarClose');
+    var nav = document.getElementById('sidebarNav');
+    var pillHover = document.getElementById('navPillHover');
+    var pillActive = document.getElementById('navPillActive');
+    var collapseBtn = document.getElementById('sidebarCollapse');
+    var tip = document.getElementById('navTooltip');
+    var desktopMq = window.matchMedia('(min-width: 992px)');
 
+    function isDesktop() { return desktopMq.matches; }
+    function isCollapsed() { return root.classList.contains('sb-collapsed') && isDesktop(); }
+    function store(kind, key, value) {
+        try {
+            var st = kind === 's' ? window.sessionStorage : window.localStorage;
+            if (value === undefined) return st.getItem(key);
+            st.setItem(key, value);
+        } catch (err) { return null; }
+    }
+
+    /* Drawer (layar kecil) */
     function setSidebar(open) {
         if (!sidebar) return;
         sidebar.classList.toggle('show', open);
@@ -1118,13 +1320,260 @@
     if (closeBtn) closeBtn.addEventListener('click', function () { setSidebar(false); });
     if (overlay) overlay.addEventListener('click', function () { setSidebar(false); });
 
+    /* Pil: posisi dihitung relatif terhadap area scroll menu */
+    function rectIn(el) {
+        var n = nav.getBoundingClientRect();
+        var r = el.getBoundingClientRect();
+        return { x: r.left - n.left + nav.scrollLeft, y: r.top - n.top + nav.scrollTop, w: r.width, h: r.height };
+    }
+    function put(pill, r) {
+        pill.style.width = r.w + 'px';
+        pill.style.height = r.h + 'px';
+        pill.style.transform = 'translate3d(' + r.x + 'px,' + r.y + 'px,0)';
+    }
+    // Pindahkan pil tanpa animasi (mis. saat pertama muncul), lalu aktifkan animasi lagi
+    function putInstant(pill, r) {
+        pill.classList.add('is-sync');
+        put(pill, r);
+        void pill.offsetWidth;
+        pill.classList.remove('is-sync');
+    }
+
+    var activeEl = nav ? nav.querySelector('a[aria-current="page"]') : null;
+
+    // Menu di dalam grup yang tertutup / mode ikon diwakili tombol induk grupnya
+    function targetFor(el) {
+        if (!el) return null;
+        var g = el.closest('.nav-group');
+        if (g && (!g.classList.contains('is-open') || isCollapsed())) return g.querySelector('.nav-parent');
+        return el;
+    }
+
+    function placeActive() {
+        var t = targetFor(activeEl);
+        if (!t) { pillActive.style.opacity = '0'; return; }
+        put(pillActive, rectIn(t));
+        pillActive.style.opacity = '1';
+    }
+
+    // Jaga posisi pil tetap pas selama layout beranimasi (grup membuka, sidebar menciut)
+    function syncActive(ms) {
+        if (!activeEl) return;
+        pillActive.classList.add('is-sync');
+        var end = performance.now() + ms;
+        (function tick() {
+            placeActive();
+            if (performance.now() < end) requestAnimationFrame(tick);
+            else pillActive.classList.remove('is-sync');
+        })();
+    }
+
+    function findByKey(key) {
+        var list = nav.querySelectorAll('[data-nav-key]');
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].getAttribute('data-nav-key') === key) return list[i];
+        }
+        return null;
+    }
+
+    function hideHover() { if (pillHover) pillHover.style.opacity = '0'; }
+    function showHover(link) {
+        var fresh = pillHover.style.opacity !== '1';
+        if (fresh) putInstant(pillHover, rectIn(link)); else put(pillHover, rectIn(link));
+        pillHover.style.opacity = '1';
+    }
+
+    /* Tooltip (mode ikon) */
+    function hideTip() { if (tip) tip.classList.remove('show'); }
+    function showTip(el) {
+        if (!tip || !isCollapsed()) return;
+        var text = el.getAttribute('data-tip');
+        if (!text) return;
+        var r = el.getBoundingClientRect();
+        tip.textContent = text;
+        tip.style.left = (r.right + 12) + 'px';
+        tip.style.top = (r.top + r.height / 2) + 'px';
+        tip.classList.add('show');
+    }
+
+    /* Mode ikon (desktop) */
+    function setCollapsed(c, persist) {
+        root.classList.toggle('sb-collapsed', c);
+        if (collapseBtn) {
+            collapseBtn.setAttribute('aria-pressed', c ? 'true' : 'false');
+            collapseBtn.setAttribute('data-tip', c ? 'Perluas menu' : 'Ciutkan menu');
+            var lbl = collapseBtn.querySelector('.label');
+            if (lbl) lbl.textContent = c ? 'Perluas menu' : 'Ciutkan menu';
+        }
+        if (persist) store('l', 'simfasSidebar', c ? 'collapsed' : 'expanded');
+        hideTip();
+        hideHover();
+        syncActive(480);
+    }
+
+    function setGroup(g, open) {
+        g.classList.toggle('is-open', open);
+        g.querySelector('.nav-parent').setAttribute('aria-expanded', open ? 'true' : 'false');
+        syncActive(420);
+    }
+
+    if (nav && pillHover && pillActive) {
+        nav.classList.add('has-pills');
+
+        // Pil aktif meluncur dari menu halaman sebelumnya ke menu halaman ini
+        if (activeEl) {
+            var key = activeEl.getAttribute('data-nav-key');
+            var from = store('s', 'simfasNavFrom');
+            var fromEl = (from && from !== key && !reduceMotion) ? findByKey(from) : null;
+            var fromT = targetFor(fromEl);
+            if (fromT) {
+                putInstant(pillActive, rectIn(fromT));
+                pillActive.style.opacity = '1';
+                requestAnimationFrame(function () { requestAnimationFrame(placeActive); });
+            } else {
+                putInstant(pillActive, rectIn(targetFor(activeEl)));
+                placeActive();
+            }
+            store('s', 'simfasNavFrom', key);
+        }
+
+        // Pil hover mengikuti kursor
+        nav.addEventListener('pointerover', function (e) {
+            if (e.pointerType === 'touch') return;
+            var link = e.target.closest('.side-link');
+            if (link && nav.contains(link)) showHover(link);
+        });
+        nav.addEventListener('pointerleave', hideHover);
+        nav.addEventListener('scroll', hideHover, { passive: true });
+
+        // Grup menu bersarang
+        nav.addEventListener('click', function (e) {
+            var parent = e.target.closest('.nav-parent');
+            if (!parent) return;
+            var group = parent.closest('.nav-group');
+            if (isCollapsed()) { setCollapsed(false, true); setGroup(group, true); return; }
+            setGroup(group, !group.classList.contains('is-open'));
+        });
+
+        // Klik menu: pil langsung meluncur ke tujuan sebelum halaman berpindah
+        nav.addEventListener('click', function (e) {
+            if (reduceMotion || e.defaultPrevented || e.button !== 0) return;
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+            var a = e.target.closest('a[data-nav-key]');
+            if (!a || a.getAttribute('aria-current') === 'page') return;
+            store('s', 'simfasNavFrom', a.getAttribute('data-nav-key'));
+            if (pillActive.style.opacity !== '1') putInstant(pillActive, rectIn(a));
+            put(pillActive, rectIn(a));
+            pillActive.style.opacity = '1';
+        });
+
+        window.addEventListener('resize', placeActive);
+        window.addEventListener('load', placeActive);
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeActive);
+    }
+
+    if (collapseBtn) {
+        collapseBtn.addEventListener('click', function () { setCollapsed(!isCollapsed(), true); });
+        if (root.classList.contains('sb-collapsed')) setCollapsed(true, false);
+    }
+
+    var kbd = document.querySelector('[data-kbd]');
+    if (kbd && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)) kbd.textContent = '\u2318B';
+
+    if (sidebar) {
+        sidebar.addEventListener('pointerover', function (e) {
+            var el = e.target.closest('[data-tip]');
+            if (el) showTip(el); else hideTip();
+        });
+        sidebar.addEventListener('pointerleave', hideTip);
+        sidebar.addEventListener('focusin', function (e) {
+            var el = e.target.closest('[data-tip]');
+            if (el && e.target.matches(':focus-visible')) showTip(el);
+        });
+        sidebar.addEventListener('focusout', hideTip);
+    }
+
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && sidebar && sidebar.classList.contains('show')) setSidebar(false);
+        if (!sidebar) return;
+        if (e.key === 'Escape' && sidebar.classList.contains('show')) { setSidebar(false); return; }
+
+        // Ctrl/⌘ + B: ciutkan/perluas sidebar (desktop) atau buka/tutup drawer (layar kecil)
+        if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === 'b') {
+            var t = e.target;
+            if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+            e.preventDefault();
+            if (isDesktop()) setCollapsed(!root.classList.contains('sb-collapsed'), true);
+            else setSidebar(!sidebar.classList.contains('show'));
+        }
     });
 
-    window.matchMedia('(min-width: 992px)').addEventListener('change', function (e) {
+    desktopMq.addEventListener('change', function (e) {
         if (e.matches) setSidebar(false);
+        hideTip();
+        syncActive(0);
     });
+
+    /* Drawer yang bisa digeser (sentuh): geser ke kiri untuk menutup, tarik dari tepi kiri untuk membuka */
+    var drag = null;
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    if (sidebar && overlay) {
+        document.addEventListener('pointerdown', function (e) {
+            if (isDesktop() || e.pointerType === 'mouse' || !e.isPrimary) return;
+            var isOpen = sidebar.classList.contains('show');
+            var mode = null;
+            if (isOpen && sidebar.contains(e.target)) mode = 'close';
+            else if (!isOpen && e.clientX <= 18) mode = 'open';
+            if (!mode) return;
+            drag = {
+                mode: mode, x: e.clientX, y: e.clientY, lx: e.clientX, lt: e.timeStamp,
+                vx: 0, p: 0, started: false, w: sidebar.getBoundingClientRect().width || 300
+            };
+        }, { passive: true });
+
+        document.addEventListener('pointermove', function (e) {
+            if (!drag) return;
+            var dx = e.clientX - drag.x;
+            var dy = e.clientY - drag.y;
+
+            if (!drag.started) {
+                if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+                // Gerakan vertikal atau arah salah: bukan geser drawer
+                if (Math.abs(dy) > Math.abs(dx) || (drag.mode === 'close' ? dx > 0 : dx < 0)) { drag = null; return; }
+                drag.started = true;
+                sidebar.classList.add('is-dragging');
+                overlay.classList.add('is-dragging');
+                if (drag.mode === 'open') sidebar.style.visibility = 'visible';
+            }
+
+            var dt = e.timeStamp - drag.lt;
+            if (dt > 0) drag.vx = (e.clientX - drag.lx) / dt;
+            drag.lx = e.clientX;
+            drag.lt = e.timeStamp;
+
+            drag.p = drag.mode === 'close' ? clamp(dx, -drag.w, 0) : clamp(-drag.w + dx, -drag.w, 0);
+            sidebar.style.transform = 'translateX(' + drag.p + 'px)';
+            overlay.style.opacity = String(1 + drag.p / drag.w);
+        }, { passive: true });
+
+        var endDrag = function () {
+            if (!drag) return;
+            var d = drag;
+            drag = null;
+            if (!d.started) return;
+
+            var open = d.vx > 0.5 ? true : d.vx < -0.5 ? false : d.p > -d.w * 0.5;
+            sidebar.classList.remove('is-dragging');
+            overlay.classList.remove('is-dragging');
+            sidebar.style.transform = '';
+            sidebar.style.visibility = '';
+            overlay.style.opacity = '';
+            setSidebar(open);
+        };
+        document.addEventListener('pointerup', endDrag);
+        document.addEventListener('pointercancel', endDrag);
+    }
 
     /* ---------- Transisi halus saat berpindah halaman ---------- */
     document.addEventListener('click', function (e) {
